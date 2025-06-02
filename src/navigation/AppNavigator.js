@@ -6,16 +6,16 @@ import { Text } from 'react-native';
 
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/auth/SignupScreen';
-import HomeScreen from '../screens/workout/HomeScreen';
-import WorkoutLibraryScreen from '../screens/workout/WorkoutLibraryScreen';
-import WorkoutDetailScreen from '../screens/workout/WorkoutDetailScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
-import HomePageScreen from '../screens/pages/HomePageScreen'; // Create this file
-import MealTrackingScreen from '../screens/pages/MealTrackingScreen'; // Create this file
+import HomePageScreen from '../screens/pages/HomePageScreen';
+import MealTrackingScreen from '../screens/pages/MealTrackingScreen';
+import WorkoutSelection from '../screens/workout/WorkoutSelection'; // ✅ Import added
+import WorkoutScreen from '../screens/workout/WorkoutScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
 
+// Auth stack for login/signup
 const AuthStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="Login" component={LoginScreen} />
@@ -23,26 +23,15 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-const WorkoutStack = () => (
-  <Stack.Navigator>
-    <Stack.Screen 
-      name="Home" 
-      component={HomeScreen}
-      options={{ headerShown: false }}
-    />
-    <Stack.Screen 
-      name="WorkoutLibrary" 
-      component={WorkoutLibraryScreen}
-      options={{ title: 'Workouts' }}
-    />
-    <Stack.Screen 
-      name="WorkoutDetail" 
-      component={WorkoutDetailScreen}
-      options={{ title: 'Workout Details' }}
-    />
+// ✅ Home stack for HomePage and WorkoutSelection
+const HomeStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="HomePageScreen" component={HomePageScreen} />
+    <Stack.Screen name="WorkoutSelection" component={WorkoutSelection} />
   </Stack.Navigator>
 );
 
+// Main tab navigator for the app
 const MainTabs = () => (
   <Tab.Navigator
     screenOptions={{
@@ -52,8 +41,8 @@ const MainTabs = () => (
     }}
   >
     <Tab.Screen 
-      name="HomePage" 
-      component={HomePageScreen}
+      name="Home" 
+      component={HomeStack}
       options={{
         tabBarLabel: 'Home',
         tabBarIcon: ({ color }) => <Text style={{ fontSize: 18 }}>{'🏠'}</Text>
@@ -61,7 +50,7 @@ const MainTabs = () => (
     />
     <Tab.Screen 
       name="Workouts" 
-      component={WorkoutStack}
+      component={WorkoutScreen}
       options={{
         tabBarLabel: 'Workout',
         tabBarIcon: ({ color }) => <Text style={{ fontSize: 18 }}>{'🏋️'}</Text>
@@ -86,6 +75,7 @@ const MainTabs = () => (
   </Tab.Navigator>
 );
 
+// Root navigator
 export default function AppNavigator({ user }) {
   return (
     <NavigationContainer>
