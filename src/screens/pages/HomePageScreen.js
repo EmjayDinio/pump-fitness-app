@@ -3,12 +3,12 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   ScrollView,
   Modal,
   Alert,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
+import styles from './HomePageScreen.styles'; // Import styles
 
 const HomePageScreen = () => {
   const navigation = useNavigation();
@@ -17,7 +17,6 @@ const HomePageScreen = () => {
   const [selectedBodyParts, setSelectedBodyParts] = useState([]);
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
 
-  // Fitness goals mapped to API types
   const fitnessGoals = [
     { label: 'Cardio', apiType: 'cardio' },
     { label: 'Muscle Gain', apiType: 'strength' },
@@ -28,7 +27,6 @@ const HomePageScreen = () => {
     { label: 'Strongman', apiType: 'strongman' }
   ];
 
-  // Body parts mapped to API muscle groups
   const bodyParts = [
     { label: 'Chest', apiMuscle: 'chest' },
     { label: 'Back', apiMuscle: 'lats' },
@@ -42,7 +40,6 @@ const HomePageScreen = () => {
     { label: 'Forearms', apiMuscle: 'forearms' }
   ];
 
-  // Difficulty levels
   const difficultyLevels = [
     { label: 'Beginner', apiDifficulty: 'beginner' },
     { label: 'Intermediate', apiDifficulty: 'intermediate' },
@@ -50,56 +47,36 @@ const HomePageScreen = () => {
   ];
 
   const handleBodyPartToggle = (bodyPart) => {
-    setSelectedBodyParts(prev => {
-      if (prev.includes(bodyPart)) {
-        return prev.filter(part => part !== bodyPart);
-      } else {
-        return [...prev, bodyPart];
-      }
-    });
+    setSelectedBodyParts(prev =>
+      prev.includes(bodyPart)
+        ? prev.filter(part => part !== bodyPart)
+        : [...prev, bodyPart]
+    );
   };
 
   const handleStartWorkout = () => {
-    if (!selectedGoal) {
-      Alert.alert('Missing Selection', 'Please select a fitness goal');
-      return;
-    }
-    if (selectedBodyParts.length === 0) {
-      Alert.alert('Missing Selection', 'Please select at least one body part to focus on');
-      return;
-    }
-    if (!selectedDifficulty) {
-      Alert.alert('Missing Selection', 'Please select a difficulty level');
+    if (!selectedGoal || !selectedDifficulty || selectedBodyParts.length === 0) {
+      Alert.alert('Missing Selection', 'Please complete all selections');
       return;
     }
 
-    setModalVisible(false);
-    
-    // Find the selected goal and body parts with their API mappings
     const goalMapping = fitnessGoals.find(g => g.label === selectedGoal);
-    const bodyPartMappings = selectedBodyParts.map(part => 
+    const bodyPartMappings = selectedBodyParts.map(part =>
       bodyParts.find(bp => bp.label === part)
     );
     const difficultyMapping = difficultyLevels.find(d => d.label === selectedDifficulty);
 
-    // Navigate to WorkoutScreen with consistent parameter names
+    setModalVisible(false);
+
     navigation.navigate('Workouts', {
       fitnessGoal: selectedGoal,
       targetBodyParts: selectedBodyParts,
-      difficultyLevel: selectedDifficulty, // Changed: Pass the label directly
+      difficultyLevel: selectedDifficulty,
       apiParams: {
         type: goalMapping?.apiType,
         muscles: bodyPartMappings.map(bp => bp?.apiMuscle).filter(Boolean),
-        difficulty: difficultyMapping?.apiDifficulty // Keep API mapping for reference
+        difficulty: difficultyMapping?.apiDifficulty
       }
-    });
-
-    // Debug log to verify what's being passed
-    console.log('Navigation params:', {
-      fitnessGoal: selectedGoal,
-      targetBodyParts: selectedBodyParts,
-      difficultyLevel: selectedDifficulty,
-      apiDifficulty: difficultyMapping?.apiDifficulty
     });
   };
 
@@ -112,31 +89,21 @@ const HomePageScreen = () => {
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        {/* Header */}
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Welcome to Your Fitness Journey</Text>
           <Text style={styles.headerSubtitle}>Ready to crush your goals today?</Text>
         </View>
 
-        {/* Main Action Button */}
-        <TouchableOpacity
-          style={styles.mainButton}
-          onPress={() => setModalVisible(true)}
-        >
+        <TouchableOpacity style={styles.mainButton} onPress={() => setModalVisible(true)}>
           <Text style={styles.mainButtonText}>🎯 Create Custom Workout</Text>
           <Text style={styles.mainButtonSubtext}>Set goals, select muscles & difficulty</Text>
         </TouchableOpacity>
 
-        {/* Current Selections Preview */}
         {(selectedGoal || selectedBodyParts.length > 0 || selectedDifficulty) && (
           <View style={styles.previewContainer}>
             <Text style={styles.previewTitle}>Current Selections:</Text>
-            {selectedGoal && (
-              <Text style={styles.previewText}>Goal: {selectedGoal}</Text>
-            )}
-            {selectedDifficulty && (
-              <Text style={styles.previewText}>Level: {selectedDifficulty}</Text>
-            )}
+            {selectedGoal && <Text style={styles.previewText}>Goal: {selectedGoal}</Text>}
+            {selectedDifficulty && <Text style={styles.previewText}>Level: {selectedDifficulty}</Text>}
             {selectedBodyParts.length > 0 && (
               <Text style={styles.previewText}>
                 Focus: {selectedBodyParts.join(', ')}
@@ -145,7 +112,6 @@ const HomePageScreen = () => {
           </View>
         )}
 
-        {/* Quick Stats */}
         <View style={styles.statsContainer}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>0</Text>
@@ -158,22 +124,15 @@ const HomePageScreen = () => {
         </View>
       </ScrollView>
 
-      {/* Selection Modal */}
-      <Modal
-        animationType="slide"
-        transparent={true}
-        visible={modalVisible}
-        onRequestClose={() => setModalVisible(false)}
-      >
+      <Modal animationType="slide" transparent visible={modalVisible}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
-            <ScrollView showsVerticalScrollIndicator={false}>
+            <ScrollView>
               <Text style={styles.modalTitle}>Create Your Workout</Text>
-              
-              {/* Fitness Goals Section */}
+
               <Text style={styles.sectionTitle}>Choose Your Primary Goal:</Text>
               <View style={styles.optionsContainer}>
-                {fitnessGoals.map((goal) => (
+                {fitnessGoals.map(goal => (
                   <TouchableOpacity
                     key={goal.label}
                     style={[
@@ -182,20 +141,21 @@ const HomePageScreen = () => {
                     ]}
                     onPress={() => setSelectedGoal(goal.label)}
                   >
-                    <Text style={[
-                      styles.optionText,
-                      selectedGoal === goal.label && styles.selectedOptionText
-                    ]}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedGoal === goal.label && styles.selectedOptionText
+                      ]}
+                    >
                       {goal.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              {/* Difficulty Section */}
               <Text style={styles.sectionTitle}>Select Difficulty Level:</Text>
               <View style={styles.optionsContainer}>
-                {difficultyLevels.map((level) => (
+                {difficultyLevels.map(level => (
                   <TouchableOpacity
                     key={level.label}
                     style={[
@@ -204,21 +164,22 @@ const HomePageScreen = () => {
                     ]}
                     onPress={() => setSelectedDifficulty(level.label)}
                   >
-                    <Text style={[
-                      styles.optionText,
-                      selectedDifficulty === level.label && styles.selectedOptionText
-                    ]}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedDifficulty === level.label && styles.selectedOptionText
+                      ]}
+                    >
                       {level.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              {/* Body Parts Section */}
               <Text style={styles.sectionTitle}>Select Target Muscles:</Text>
               <Text style={styles.sectionSubtitle}>Choose one or more muscle groups</Text>
               <View style={styles.optionsContainer}>
-                {bodyParts.map((bodyPart) => (
+                {bodyParts.map(bodyPart => (
                   <TouchableOpacity
                     key={bodyPart.label}
                     style={[
@@ -227,37 +188,28 @@ const HomePageScreen = () => {
                     ]}
                     onPress={() => handleBodyPartToggle(bodyPart.label)}
                   >
-                    <Text style={[
-                      styles.optionText,
-                      selectedBodyParts.includes(bodyPart.label) && styles.selectedOptionText
-                    ]}>
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selectedBodyParts.includes(bodyPart.label) && styles.selectedOptionText
+                      ]}
+                    >
                       {bodyPart.label}
                     </Text>
                   </TouchableOpacity>
                 ))}
               </View>
 
-              {/* Action Buttons */}
               <View style={styles.modalButtonsContainer}>
-                <TouchableOpacity
-                  style={styles.resetButton}
-                  onPress={resetSelections}
-                >
+                <TouchableOpacity style={styles.resetButton} onPress={resetSelections}>
                   <Text style={styles.resetButtonText}>Reset</Text>
                 </TouchableOpacity>
-                
-                <TouchableOpacity
-                  style={styles.startButton}
-                  onPress={handleStartWorkout}
-                >
+                <TouchableOpacity style={styles.startButton} onPress={handleStartWorkout}>
                   <Text style={styles.startButtonText}>Create Workout</Text>
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={() => setModalVisible(false)}
-              >
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setModalVisible(false)}>
                 <Text style={styles.cancelButtonText}>Cancel</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -267,206 +219,134 @@ const HomePageScreen = () => {
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+const videoStyles = {
+  // Video section in exercise card
+  videoSection: {
+    marginTop: 12,
+    padding: 12,
     backgroundColor: '#f8f9fa',
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#FF6B6B',
   },
-  scrollContent: {
-    flexGrow: 1,
-    padding: 20,
-  },
-  header: {
-    marginBottom: 40,
-    alignItems: 'center',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    textAlign: 'center',
+  videoLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#333',
     marginBottom: 8,
   },
-  headerSubtitle: {
-    fontSize: 16,
-    color: '#7f8c8d',
-    textAlign: 'center',
-  },
-  mainButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 20,
-    paddingHorizontal: 25,
-    borderRadius: 15,
+  videoButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 8,
+    paddingHorizontal: 16,
+    borderRadius: 6,
     alignItems: 'center',
-    marginBottom: 20,
-    shadowColor: '#007AFF',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
   },
-  mainButtonText: {
-    color: 'white',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  mainButtonSubtext: {
-    color: 'white',
+  videoButtonText: {
+    color: '#fff',
     fontSize: 14,
-    opacity: 0.9,
+    fontWeight: '600',
   },
-  previewContainer: {
-    backgroundColor: 'white',
-    padding: 15,
-    borderRadius: 12,
-    marginBottom: 20,
-    borderLeftWidth: 4,
-    borderLeftColor: '#007AFF',
-  },
-  previewTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    marginBottom: 8,
-  },
-  previewText: {
-    fontSize: 14,
-    color: '#6c757d',
-    marginBottom: 4,
-  },
-  statsContainer: {
+  
+  // Exercise button container (for side-by-side buttons)
+  exerciseButtonContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 15,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: 'white',
-    padding: 20,
-    borderRadius: 12,
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  statNumber: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#007AFF',
-    marginBottom: 5,
-  },
-  statLabel: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    textAlign: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  modalContent: {
-    backgroundColor: 'white',
-    borderRadius: 20,
-    padding: 25,
-    width: '90%',
-    maxHeight: '85%',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
-  },
-  modalTitle: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: '#2c3e50',
-    textAlign: 'center',
-    marginBottom: 25,
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2c3e50',
-    marginBottom: 8,
-    marginTop: 15,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: '#7f8c8d',
-    marginBottom: 15,
-  },
-  optionsContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    marginTop: 12,
     gap: 10,
-    marginBottom: 20,
-  },
-  optionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 18,
-    borderRadius: 25,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 2,
-    borderColor: '#e9ecef',
-  },
-  selectedOption: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  optionText: {
-    fontSize: 14,
-    color: '#495057',
-    fontWeight: '500',
-  },
-  selectedOptionText: {
-    color: 'white',
-  },
-  modalButtonsContainer: {
-    flexDirection: 'row',
-    gap: 15,
-    marginTop: 20,
-    marginBottom: 15,
-  },
-  resetButton: {
-    flex: 1,
-    paddingVertical: 15,
-    borderRadius: 12,
-    backgroundColor: '#f8f9fa',
-    borderWidth: 2,
-    borderColor: '#dee2e6',
-  },
-  resetButtonText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6c757d',
   },
   startButton: {
-    flex: 2,
-    paddingVertical: 15,
-    borderRadius: 12,
-    backgroundColor: '#28a745',
-  },
-  startButtonText: {
-    textAlign: 'center',
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: 'white',
-  },
-  cancelButton: {
+    flex: 1,
+    backgroundColor: '#007AFF',
     paddingVertical: 12,
+    borderRadius: 8,
     alignItems: 'center',
   },
-  cancelButtonText: {
-    fontSize: 16,
-    color: '#007AFF',
+  videoQuickButton: {
+    backgroundColor: '#FF6B6B',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderRadius: 8,
+    alignItems: 'center',
+    minWidth: 50,
   },
-});
+  videoQuickButtonText: {
+    fontSize: 18,
+  },
+  
+  // Video Modal Styles
+  videoModalContainer: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  videoModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e1e5e9',
+    paddingTop: 50, // Account for status bar
+  },
+  videoModalTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#333',
+    flex: 1,
+  },
+  closeButton: {
+    padding: 8,
+    backgroundColor: '#f8f9fa',
+    borderRadius: 20,
+    width: 36,
+    height: 36,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  closeButtonText: {
+    fontSize: 18,
+    color: '#666',
+    fontWeight: '600',
+  },
+  
+  // Video container
+  videoContainer: {
+    height: 220,
+    backgroundColor: '#000',
+    margin: 16,
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  webView: {
+    flex: 1,
+  },
+  
+  // Video info section
+  videoInfo: {
+    padding: 16,
+    flex: 1,
+  },
+  videoInstructions: {
+    fontSize: 16,
+    lineHeight: 24,
+    color: '#333',
+    marginBottom: 16,
+  },
+  videoDetails: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    backgroundColor: '#f8f9fa',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  videoDetailText: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#666',
+  },
+};
+
 
 export default HomePageScreen;

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -12,7 +12,8 @@ import {
   Dimensions,
 } from 'react-native';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
-
+import ExerciseModal from './ExerciseModal';
+import styles from './WorkoutScreen.styles'; // Import styles
 const { width } = Dimensions.get('window');
 
 const WorkoutScreen = () => {
@@ -27,9 +28,10 @@ const WorkoutScreen = () => {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [completedExercises, setCompletedExercises] = useState([]);
   
-  // FIXED: Simplified modal state management
+  // Refs for cleanup
   const timerRef = useRef(null);
   const workoutStartTimeRef = useRef(null);
+  const isMountedRef = useRef(true);
   
   const navigation = useNavigation();
   const route = useRoute();
@@ -50,11 +52,14 @@ const WorkoutScreen = () => {
     return difficultyMap[difficulty] || 'beginner';
   };
 
-  // FIXED: Simplified timer effect
+  // FIXED: Improved timer effect with better cleanup
+  // Your timer effect:
   useEffect(() => {
-    if (isTimerRunning) {
+    if (isTimerRunning && isMountedRef.current) {
       timerRef.current = setInterval(() => {
-        setWorkoutTimer(prev => prev + 1);
+        if (isMountedRef.current) {
+          setWorkoutTimer(prev => prev + 1);
+        }
       }, 1000);
     } else {
       if (timerRef.current) {
@@ -71,11 +76,16 @@ const WorkoutScreen = () => {
     };
   }, [isTimerRunning]);
 
-  // Cleanup timer on component unmount
+
+  // Component cleanup on unmount
   useEffect(() => {
+    isMountedRef.current = true;
+    
     return () => {
+      isMountedRef.current = false;
       if (timerRef.current) {
         clearInterval(timerRef.current);
+        timerRef.current = null;
       }
     };
   }, []);
@@ -124,7 +134,19 @@ const WorkoutScreen = () => {
     return muscleMap[bodyPart] || bodyPart.toLowerCase();
   };
 
-  const fetchExercises = async () => {
+  // FIXED: Memoized fetchExercises to prevent unnecessary re-calls
+  const fetchExercises = useCallback(async () => {
+    if (!fitnessGoal || fitnessGoal === 'General Fitness') {
+      if (!params?.fitnessGoal && (!targetBodyParts || targetBodyParts.length === 0)) {
+        console.log('No fitness goal selected, skipping exercise fetch');
+        setExercises([]);
+        setLoading(false);
+        return;
+      }
+    }
+
+    if (!isMountedRef.current) return;
+
     setLoading(true);
     setError(null);
     
@@ -207,25 +229,31 @@ const WorkoutScreen = () => {
       console.log('Total exercises fetched:', allExercises.length);
       console.log('Sample exercise difficulties:', allExercises.slice(0, 3).map(ex => ex.difficulty));
       
-      setExercises(allExercises);
-      
-      if (allExercises.length === 0) {
-        setError(`No ${apiDifficulty} level exercises found for your selected criteria. Try adjusting your selections.`);
-        const mockExercises = generateMockExercises(targetBodyParts, fitnessGoal, apiDifficulty);
-        setExercises(mockExercises);
+      if (isMountedRef.current) {
+        setExercises(allExercises);
+        
+        if (allExercises.length === 0) {
+          setError(`No ${apiDifficulty} level exercises found for your selected criteria. Try adjusting your selections.`);
+          const mockExercises = generateMockExercises(targetBodyParts, fitnessGoal, apiDifficulty);
+          setExercises(mockExercises);
+        }
       }
       
     } catch (err) {
       console.error('Error fetching exercises:', err);
-      setError(`Failed to load exercises: ${err.message}`);
-      
-      const apiDifficulty = getDifficultyApiValue(difficultyLevel);
-      const mockExercises = generateMockExercises(targetBodyParts, fitnessGoal, apiDifficulty);
-      setExercises(mockExercises);
+      if (isMountedRef.current) {
+        setError(`Failed to load exercises: ${err.message}`);
+        
+        const apiDifficulty = getDifficultyApiValue(difficultyLevel);
+        const mockExercises = generateMockExercises(targetBodyParts, fitnessGoal, apiDifficulty);
+        setExercises(mockExercises);
+      }
     } finally {
-      setLoading(false);
+      if (isMountedRef.current) {
+        setLoading(false);
+      }
     }
-  };
+  }, [fitnessGoal, targetBodyParts, difficultyLevel, params]);
 
   // Generate mock exercises for testing when API fails
   const generateMockExercises = (bodyParts, goal, difficulty = 'beginner') => {
@@ -233,34 +261,17 @@ const WorkoutScreen = () => {
       'Chest': [
         { name: 'Push-ups', muscle: 'chest', difficulty: 'beginner', type: 'strength', instructions: 'Start in plank position, lower chest to ground, push back up. Keep your body straight and core engaged.' },
         { name: 'Incline Push-ups', muscle: 'chest', difficulty: 'beginner', type: 'strength', instructions: 'Place hands on elevated surface, perform push-up motion. Great for beginners.' },
-        { name: 'Chest Squeeze', muscle: 'chest', difficulty: 'beginner', type: 'isometric', instructions: 'Hold a ball or towel between palms, press hands together to activate chest muscles.' },
-        { name: 'Decline Push-ups', muscle: 'chest', difficulty: 'intermediate', type: 'strength', instructions: 'Place feet on elevated surface, perform push-up motion. More challenging variation.' },
-        { name: 'Dumbbell Bench Press', muscle: 'chest', difficulty: 'intermediate', type: 'strength', instructions: 'Lie on a bench, press dumbbells from chest level up until arms are extended.' },
-        { name: 'Clap Push-ups', muscle: 'chest', difficulty: 'expert', type: 'plyometric', instructions: 'Perform a push-up and explode up to clap hands mid-air.' },
-        { name: 'One-arm Push-ups', muscle: 'chest', difficulty: 'expert', type: 'strength', instructions: 'Perform push-ups using one arm. Maintain balance and control.' },
       ],
       'Back': [
         { name: 'Superman', muscle: 'lats', difficulty: 'beginner', type: 'strength', instructions: 'Lie face down, lift chest and legs off ground.' },
         { name: 'Bird-Dog', muscle: 'lats', difficulty: 'beginner', type: 'stability', instructions: 'Extend opposite arm and leg while on all fours, alternate sides.' },
-        { name: 'Reverse Fly', muscle: 'lats', difficulty: 'intermediate', type: 'strength', instructions: 'Bend forward, lift arms to sides squeezing shoulder blades.' },
-        { name: 'Bent-over Rows', muscle: 'lats', difficulty: 'intermediate', type: 'strength', instructions: 'Hold weights, bend forward, pull elbows back like rowing.' },
-        { name: 'Pull-ups', muscle: 'lats', difficulty: 'expert', type: 'strength', instructions: 'Hang from bar, pull body up until chin clears bar.' },
-        { name: 'Deadlifts', muscle: 'lats', difficulty: 'expert', type: 'strength', instructions: 'Lift barbell from ground while keeping back straight.' },
       ],
       'Legs': [
         { name: 'Wall Sits', muscle: 'quadriceps', difficulty: 'beginner', type: 'isometric', instructions: 'Sit against wall with thighs parallel to ground. Hold for time.' },
         { name: 'Bodyweight Squats', muscle: 'quadriceps', difficulty: 'beginner', type: 'strength', instructions: 'Stand with feet shoulder-width apart, lower as if sitting in chair.' },
-        { name: 'Lunges', muscle: 'quadriceps', difficulty: 'intermediate', type: 'strength', instructions: 'Step forward into lunge position, lower and return. Alternate legs.' },
-        { name: 'Jump Squats', muscle: 'quadriceps', difficulty: 'expert', type: 'plyometric', instructions: 'Perform squats with explosive jump at top.' },
-        { name: 'Pistol Squats', muscle: 'quadriceps', difficulty: 'expert', type: 'strength', instructions: 'Perform one-legged squats while keeping other leg extended forward.' },
       ],
       'Core': [
         { name: 'Plank', muscle: 'abdominals', difficulty: 'beginner', type: 'isometric', instructions: 'Hold plank position keeping body straight.' },
-        { name: 'Leg Raises', muscle: 'abdominals', difficulty: 'beginner', type: 'strength', instructions: 'Lie flat, lift legs off ground keeping them straight.' },
-        { name: 'Russian Twists', muscle: 'obliques', difficulty: 'intermediate', type: 'strength', instructions: 'Twist torso side to side while seated and feet raised.' },
-        { name: 'Bicycle Crunches', muscle: 'abdominals', difficulty: 'intermediate', type: 'strength', instructions: 'Lie on back, bring opposite elbow to knee.' },
-        { name: 'V-Ups', muscle: 'abdominals', difficulty: 'expert', type: 'strength', instructions: 'Raise arms and legs to meet at top, forming a V shape.' },
-        { name: 'Dragon Flag', muscle: 'abdominals', difficulty: 'expert', type: 'strength', instructions: 'Hold bench behind head, lift entire body straight up. Lower under control.' },
       ],
     };
 
@@ -293,28 +304,24 @@ const WorkoutScreen = () => {
     return exercises;
   };
 
-  const onRefresh = async () => {
+  const onRefresh = useCallback(async () => {
     setRefreshing(true);
     await fetchExercises();
     setRefreshing(false);
-  };
+  }, [fetchExercises]);
 
+  // FIXED: Single, properly memoized useFocusEffect
   useFocusEffect(
-    React.useCallback(() => {
-      if (params && (params.fitnessGoal || params.targetBodyParts || params.difficultyLevel)) {
+    useCallback(() => {
+      // Only fetch exercises if user has actually selected parameters and component is mounted
+      if (isMountedRef.current && params && (params.fitnessGoal || params.targetBodyParts?.length > 0 || params.difficultyLevel)) {
         fetchExercises();
       }
-    }, [params])
+    }, [fetchExercises, params])
   );
 
-  useEffect(() => {
-    if (!route?.params) {
-      fetchExercises();
-    }
-  }, []);
-
-  // FIXED: Simplified workout start logic
-  const handleStartWorkout = () => {
+  // FIXED: Improved workout start logic with better state management
+  const handleStartWorkout = useCallback(() => {
     if (exercises.length === 0) {
       Alert.alert('No Exercises', 'Please wait for exercises to load before starting.');
       return;
@@ -342,30 +349,40 @@ const WorkoutScreen = () => {
         }
       ]
     );
-  };
+  }, [exercises.length, difficultyLevel, fitnessGoal, targetBodyParts]);
 
-  const handleNextExercise = () => {
-    const currentExercise = exercises[currentExerciseIndex];
-    setCompletedExercises(prev => [...prev, currentExercise]);
+const handleNextExercise = useCallback(() => {
+  const currentExercise = exercises[currentExerciseIndex];
+  const newCompletedExercises = [...completedExercises, currentExercise];
+  setCompletedExercises(newCompletedExercises);
 
+  if (currentExerciseIndex < exercises.length - 1) {
+    setCurrentExerciseIndex(prev => prev + 1);
+  } else {
+    // Pass the updated completed exercises count to handleWorkoutComplete
+    handleWorkoutComplete(newCompletedExercises);
+  }
+}, [currentExerciseIndex, exercises, completedExercises]);
+
+  const handleSkipExercise = useCallback(() => {
     if (currentExerciseIndex < exercises.length - 1) {
       setCurrentExerciseIndex(prev => prev + 1);
     } else {
       handleWorkoutComplete();
     }
-  };
-
-  const handleSkipExercise = () => {
-    if (currentExerciseIndex < exercises.length - 1) {
-      setCurrentExerciseIndex(prev => prev + 1);
-    } else {
-      handleWorkoutComplete();
-    }
-  };
+  }, [currentExerciseIndex, exercises.length]);
 
   // ENHANCED: Workout completion with detailed data
-  const handleWorkoutComplete = () => {
+  const handleWorkoutComplete = useCallback((finalCompletedExercises = completedExercises) => {
     const endTime = new Date();
+
+    // Use the passed finalCompletedExercises or calculate it properly
+    const actualCompletedCount = finalCompletedExercises ? 
+    finalCompletedExercises.length : 
+    completedExercises.length + 1; // +1 for the current exercise being completed
+    
+    const actualCompletedExercises = finalCompletedExercises || 
+    [...completedExercises, exercises[currentExerciseIndex]];
     const workoutData = {
       id: Date.now().toString(),
       date: endTime.toISOString(),
@@ -376,9 +393,9 @@ const WorkoutScreen = () => {
       difficulty: difficultyLevel,
       duration: workoutTimer,
       totalExercises: exercises.length,
-      completedExercises: completedExercises.length,
-      completionRate: Math.round((completedExercises.length / exercises.length) * 100),
-      exercises: completedExercises,
+      completedExercises: actualCompletedCount,
+      completionRate: Math.round((actualCompletedCount / exercises.length) * 100),
+      exercises: actualCompletedExercises,
       status: 'completed'
     };
 
@@ -387,7 +404,7 @@ const WorkoutScreen = () => {
     
     Alert.alert(
       'Workout Complete! 🎉',
-      `Awesome job! You completed ${completedExercises.length} out of ${exercises.length} exercises in ${formatTime(workoutTimer)}.\n\nCompletion Rate: ${workoutData.completionRate}%`,
+      `Awesome job! You completed ${actualCompletedCount} out of ${exercises.length} exercises in ${formatTime(workoutTimer)}.\n\nCompletion Rate: ${workoutData.completionRate}%`,
       [
         {
           text: 'View Summary',
@@ -399,10 +416,10 @@ const WorkoutScreen = () => {
         }
       ]
     );
-  };
+  }, [fitnessGoal, targetBodyParts, difficultyLevel, workoutTimer, exercises, completedExercises, currentExerciseIndex]);
 
   // NEW: Finish workout early function
-  const handleFinishWorkout = () => {
+  const handleFinishWorkout = useCallback(() => {
     Alert.alert(
       'Finish Workout?',
       `You've completed ${completedExercises.length} out of ${exercises.length} exercises.\n\nAre you sure you want to finish this workout? Your progress will be saved.`,
@@ -414,9 +431,9 @@ const WorkoutScreen = () => {
         }
       ]
     );
-  };
+  }, [completedExercises.length, exercises.length, handleWorkoutComplete]);
 
-  const showWorkoutSummary = (workoutData) => {
+  const showWorkoutSummary = useCallback((workoutData) => {
     Alert.alert(
       'Workout Summary 📊',
       `Time: ${formatTime(workoutData.duration)}\nExercises Completed: ${workoutData.completedExercises}/${workoutData.totalExercises}\nCompletion Rate: ${workoutData.completionRate}%\nGoal: ${workoutData.goal}\n\nGreat work! Keep it up! 💪`,
@@ -425,19 +442,19 @@ const WorkoutScreen = () => {
         onPress: () => saveAndNavigateHome(workoutData)
       }]
     );
-  };
+  }, []);
 
   // NEW: Save workout and navigate to home
-  const saveAndNavigateHome = (workoutData) => {
+  const saveAndNavigateHome = useCallback((workoutData) => {
     resetWorkoutState();
     navigation.navigate('Home', { 
       completedWorkout: workoutData,
       refresh: true 
     });
-  };
+  }, [navigation]);
 
   // Reset workout state function
-  const resetWorkoutState = () => {
+  const resetWorkoutState = useCallback(() => {
     setWorkoutStarted(false);
     setCurrentExerciseIndex(0);
     setWorkoutTimer(0);
@@ -445,15 +462,15 @@ const WorkoutScreen = () => {
     setIsTimerRunning(false);
     setShowExerciseModal(false);
     workoutStartTimeRef.current = null;
-  };
+  }, []);
 
-  const handleIndividualExercise = (exercise, index) => {
+  const handleIndividualExercise = useCallback((exercise, index) => {
     setCurrentExerciseIndex(index);
     setShowExerciseModal(true);
-  };
+  }, []);
 
-  // FIXED: Simplified modal close handler
-  const handleModalClose = () => {
+  // FIXED: Improved modal close handler
+  const handleModalClose = useCallback(() => {
     if (workoutStarted) {
       Alert.alert(
         'Close Workout?',
@@ -472,7 +489,7 @@ const WorkoutScreen = () => {
     } else {
       setShowExerciseModal(false);
     }
-  };
+  }, [workoutStarted]);
 
   const getDifficultyColor = (difficulty) => {
     switch (difficulty?.toLowerCase()) {
@@ -487,7 +504,7 @@ const WorkoutScreen = () => {
     }
   };
 
-  const renderExercise = (exercise, index) => (
+  const renderExercise = useCallback((exercise, index) => (
     <View key={index} style={styles.exerciseCard}>
       <View style={styles.exerciseHeader}>
         <Text style={styles.exerciseName}>{exercise.name}</Text>
@@ -536,111 +553,7 @@ const WorkoutScreen = () => {
         <Text style={styles.startButtonText}>View Exercise</Text>
       </TouchableOpacity>
     </View>
-  );
-
-  // FIXED: Stable Exercise Modal Component
-  const ExerciseModal = () => {
-    const currentExercise = exercises[currentExerciseIndex];
-    if (!currentExercise) return null;
-
-    return (
-      <Modal
-        visible={showExerciseModal}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={handleModalClose}
-      >
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <View style={styles.timerContainer}>
-              <Text style={styles.timerText}>⏱️ {formatTime(workoutTimer)}</Text>
-            </View>
-            <TouchableOpacity
-              style={styles.closeButton}
-              onPress={handleModalClose}
-            >
-              <Text style={styles.closeButtonText}>✕</Text>
-            </TouchableOpacity>
-          </View>
-
-          <ScrollView style={styles.modalContent}>
-            <View style={styles.exerciseCounter}>
-              <Text style={styles.counterText}>
-                Exercise {currentExerciseIndex + 1} of {exercises.length}
-              </Text>
-            </View>
-
-            <Text style={styles.modalExerciseName}>{currentExercise.name}</Text>
-            
-            <View style={styles.modalExerciseInfo}>
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Target Muscle</Text>
-                <Text style={styles.infoValue}>
-                  {currentExercise.muscle || currentExercise.targetBodyPart}
-                </Text>
-              </View>
-              
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Difficulty</Text>
-                <View style={[
-                  styles.difficultyBadge,
-                  { backgroundColor: getDifficultyColor(currentExercise.difficulty) }
-                ]}>
-                  <Text style={styles.difficultyText}>
-                    {currentExercise.difficulty || 'N/A'}
-                  </Text>
-                </View>
-              </View>
-
-              <View style={styles.infoItem}>
-                <Text style={styles.infoLabel}>Type</Text>
-                <Text style={styles.infoValue}>{currentExercise.type}</Text>
-              </View>
-            </View>
-
-            <View style={styles.instructionsSection}>
-              <Text style={styles.instructionsTitle}>Instructions</Text>
-              <Text style={styles.modalInstructions}>
-                {currentExercise.instructions || 'No instructions available for this exercise.'}
-              </Text>
-            </View>
-
-            {workoutStarted && (
-              <>
-                <View style={styles.workoutControls}>
-                  <TouchableOpacity
-                    style={styles.skipButton}
-                    onPress={handleSkipExercise}
-                  >
-                    <Text style={styles.skipButtonText}>Skip</Text>
-                  </TouchableOpacity>
-                  
-                  <TouchableOpacity
-                    style={styles.completeButton}
-                    onPress={handleNextExercise}
-                  >
-                    <Text style={styles.completeButtonText}>
-                      {currentExerciseIndex === exercises.length - 1 ? 'Complete Workout' : 'Mark Complete & Next'}
-                    </Text>
-                  </TouchableOpacity>
-                </View>
-
-                {/* NEW: Finish Workout Early Button */}
-                <TouchableOpacity
-                  style={styles.finishWorkoutButton}
-                  onPress={handleFinishWorkout}
-                >
-                  <Text style={styles.finishWorkoutButtonText}>
-                    🏁 Finish Workout Early
-                  </Text>
-                </TouchableOpacity>
-              </>
-            )}
-          </ScrollView>
-        </View>
-      </Modal>
-    );
-  };
+  ), [handleIndividualExercise]);
 
   if (loading && !refreshing) {
     return (
@@ -747,6 +660,7 @@ const WorkoutScreen = () => {
           </View>
         )}
 
+
         {/* Exercises List */}
         {exercises.length > 0 ? (
           <View style={styles.exercisesContainer}>
@@ -759,8 +673,8 @@ const WorkoutScreen = () => {
             
             {exercises.map((exercise, index) => renderExercise(exercise, index))}
           </View>
-        ) : (
-          !loading && !error && (
+        ) : (   
+          !loading && !error && (params?.fitnessGoal || params?.targetBodyParts?.length > 0) && (
             <View style={styles.noExercisesContainer}>
               <Text style={styles.noExercisesText}>
                 No exercises found for your criteria.
@@ -777,433 +691,23 @@ const WorkoutScreen = () => {
       </ScrollView>
 
       {/* Exercise Modal */}
-      <ExerciseModal />
+      <ExerciseModal
+        visible={showExerciseModal}
+        exercise={exercises[currentExerciseIndex]}
+        currentIndex={currentExerciseIndex}
+        totalExercises={exercises.length}
+        workoutTimer={workoutTimer}
+        workoutStarted={workoutStarted}
+        onClose={handleModalClose}
+        onSkip={handleSkipExercise}
+        onComplete={handleNextExercise}
+        onFinishWorkout={handleFinishWorkout}
+        formatTime={formatTime}
+        getDifficultyColor={getDifficultyColor}
+        styles={styles}
+      />
     </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#f8f9fa',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#f8f9fa',
-  },
-  loadingText: {
-    marginTop: 16,
-    fontSize: 16,
-    color: '#6c757d',
-    textAlign: 'center',
-  },
-  scrollContent: {
-    paddingBottom: 20,
-  },
-  header: {
-    backgroundColor: '#fff',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  headerTitle: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 16,
-  },
-  workoutStatus: {
-    backgroundColor: '#fff3cd',
-    padding: 12,
-    borderRadius: 8,
-    marginBottom: 16,
-    borderLeftWidth: 4,
-    borderLeftColor: '#ffc107',
-  },
-  statusText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#856404',
-    marginBottom: 4,
-  },
-  progressText: {
-    fontSize: 14,
-    color: '#856404',
-  },
-  goalContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  goalLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#495057',
-    marginRight: 8,
-  },
-  goalValue: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  bodyPartsContainer: {
-    marginBottom: 20,
-  },
-  bodyPartsLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#495057',
-    marginBottom: 8,
-  },
-  bodyPartsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-  },
-  bodyPartChip: {
-    backgroundColor: '#e7f3ff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  bodyPartText: {
-    fontSize: 14,
-    color: '#007AFF',
-    fontWeight: '500',
-  },
-  mainStartButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  mainStartButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  pauseButton: {
-    backgroundColor: '#ffc107',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 12,
-  },
-  pauseButtonText: {
-    color: '#212529',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  noSelectionContainer: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  noSelectionText: {
-    fontSize: 16,
-    color: '#6c757d',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  selectGoalButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-  },
-  selectGoalButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  errorContainer: {
-    backgroundColor: '#f8d7da',
-    margin: 20,
-    padding: 16,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#f5c6cb',
-  },
-  errorText: {
-    fontSize: 16,
-    color: '#721c24',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  retryButton: {
-    backgroundColor: '#dc3545',
-    paddingHorizontal: 20,
-    paddingVertical: 10,
-    borderRadius: 8,
-    alignSelf: 'center',
-  },
-  retryButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  exercisesContainer: {
-    padding: 20,
-  },
-  exercisesTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 8,
-  },
-  exercisesSubtitle: {
-    fontSize: 16,
-    color: '#6c757d',
-    marginBottom: 20,
-  },
-  exerciseCard: {
-    backgroundColor: '#fff',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
-  },
-  exerciseHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  exerciseName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212529',
-    flex: 1,
-    marginRight: 12,
-  },
-  difficultyBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-  },
-  difficultyText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: 'bold',
-    textTransform: 'capitalize',
-  },
-  exerciseDetails: {
-    marginBottom: 16,
-  },
-  detailRow: {
-    flexDirection: 'row',
-    marginBottom: 8,
-  },
-  detailLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#495057',
-    width: 100,
-  },
-  detailValue: {
-    fontSize: 14,
-    color: '#212529',
-    flex: 1,
-    textTransform: 'capitalize',
-  },
-  instructionsContainer: {
-    marginTop: 8,
-  },
-  instructionsText: {
-    fontSize: 14,
-    color: '#6c757d',
-    lineHeight: 20,
-    marginTop: 4,
-  },
-  startButton: {
-    backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  startButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  noExercisesContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 40,
-    marginTop: 50,
-  },
-  noExercisesText: {
-    fontSize: 18,
-    color: '#6c757d',
-    textAlign: 'center',
-    marginBottom: 20,
-  },
-  // Modal Styles
-  modalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 20,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-    backgroundColor: '#f8f9fa',
-  },
-  timerContainer: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  timerText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  closeButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: '#6c757d',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  closeButtonText: {
-    color: '#fff',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  modalContent: {
-    flex: 1,
-    padding: 20,
-  },
-  exerciseCounter: {
-    backgroundColor: '#e7f3ff',
-    padding: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  counterText: {
-    fontSize: 16,
-    color: '#007AFF',
-    fontWeight: '600',
-  },
-  modalExerciseName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#212529',
-    textAlign: 'center',
-    marginBottom: 24,
-  },
-  modalExerciseInfo: {
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 24,
-  },
-  infoItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e9ecef',
-  },
-  infoLabel: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#495057',
-  },
-  infoValue: {
-    fontSize: 16,
-    color: '#212529',
-    textTransform: 'capitalize',
-  },
-  instructionsSection: {
-    marginBottom: 30,
-  },
-  instructionsTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#212529',
-    marginBottom: 12,
-  },
-  modalInstructions: {
-    fontSize: 16,
-    color: '#495057',
-    lineHeight: 24,
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 8,
-  },
-  workoutControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  skipButton: {
-    backgroundColor: '#6c757d',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 0.3,
-    alignItems: 'center',
-  },
-  skipButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  completeButton: {
-    backgroundColor: '#28a745',
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    flex: 0.65,
-    alignItems: 'center',
-  },
-  completeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-  finishWorkoutButton: {
-    backgroundColor: '#ffc107',
-    paddingVertical: 12,
-    paddingHorizontal: 20,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginTop: 8,
-    borderWidth: 2,
-    borderColor: '#e0a800',
-  },
-  finishWorkoutButtonText: {
-    color: '#212529',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-});
 
 export default WorkoutScreen;
