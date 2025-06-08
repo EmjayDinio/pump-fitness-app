@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ScrollView, StatusBar } from 'react-native';
 import { signUp } from '../../services/firebase/authService';
 
 export default function SignupScreen({ navigation }) {
@@ -56,9 +56,9 @@ export default function SignupScreen({ navigation }) {
 
     if (result.success) {
       Alert.alert(
-        'Welcome to the Squad! 🎉', 
+        'Welcome to the Squad!', 
         'Your fitness journey starts now!',
-        [{ text: 'LET\'S GO!', onPress: () => navigation.navigate('Login') }]
+        [{ text: 'Let\'s Go!', onPress: () => navigation.navigate('Login') }]
       );
     } else {
       Alert.alert('Signup Failed', result.error);
@@ -67,98 +67,135 @@ export default function SignupScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.overlay}>
-        <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
-          {/* Header Section */}
-          <View style={styles.header}>
-            <Text style={styles.appName}>💪 PUMP </Text>
-            <Text style={styles.title}>Join the Squad!</Text>
-            <Text style={styles.subtitle}>Your transformation starts here 🔥</Text>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      
+      {/* Background Gradient Effect */}
+      <View style={styles.backgroundGradient} />
+      
+      <ScrollView 
+        contentContainerStyle={styles.scrollContainer} 
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+      >
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.logoContainer}>
+            <Text style={styles.logo}>PUMP</Text>
+            <View style={styles.logoAccent} />
           </View>
-          
-          {/* Form Section */}
+          <Text style={styles.tagline}>Join the Movement</Text>
+        </View>
+
+        {/* Main Content */}
+        <View style={styles.content}>
+          <View style={styles.welcomeSection}>
+            <Text style={styles.welcomeTitle}>Create Account</Text>
+            <Text style={styles.welcomeSubtitle}>Start your transformation journey</Text>
+          </View>
+
           <View style={styles.formContainer}>
+            {/* Name Fields Row */}
             <View style={styles.nameRow}>
-              <TextInput
-                style={[styles.input, styles.nameInput]}
-                placeholder="👤 First Name"
-                placeholderTextColor="#999"
-                value={firstName}
-                onChangeText={setFirstName}
-                autoCapitalize="words"
-              />
-              <TextInput
-                style={[styles.input, styles.nameInput]}
-                placeholder="👤 Last Name"
-                placeholderTextColor="#999"
-                value={lastName}
-                onChangeText={setLastName}
-                autoCapitalize="words"
-              />
+              <View style={[styles.inputContainer, styles.nameInputContainer]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="First Name"
+                  placeholderTextColor="#9CA3AF"
+                  value={firstName}
+                  onChangeText={setFirstName}
+                  autoCapitalize="words"
+                />
+                <View style={styles.inputLine} />
+              </View>
+              <View style={[styles.inputContainer, styles.nameInputContainer]}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Last Name"
+                  placeholderTextColor="#9CA3AF"
+                  value={lastName}
+                  onChangeText={setLastName}
+                  autoCapitalize="words"
+                />
+                <View style={styles.inputLine} />
+              </View>
             </View>
-            
-            <TextInput
-              style={styles.input}
-              placeholder="📧 Email Address"
-              placeholderTextColor="#999"
-              value={email}
-              onChangeText={setEmail}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              autoCorrect={false}
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="🔒 Create Password (min 6 chars)"
-              placeholderTextColor="#999"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
-            
-            <TextInput
-              style={styles.input}
-              placeholder="🔒 Confirm Password"
-              placeholderTextColor="#999"
-              value={confirmPassword}
-              onChangeText={setConfirmPassword}
-              secureTextEntry
-            />
-            
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Email Address"
+                placeholderTextColor="#9CA3AF"
+                value={email}
+                onChangeText={setEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                autoCorrect={false}
+              />
+              <View style={styles.inputLine} />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Create Password"
+                placeholderTextColor="#9CA3AF"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+              <View style={styles.inputLine} />
+            </View>
+
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Confirm Password"
+                placeholderTextColor="#9CA3AF"
+                value={confirmPassword}
+                onChangeText={setConfirmPassword}
+                secureTextEntry
+              />
+              <View style={styles.inputLine} />
+            </View>
+
             <TouchableOpacity 
-              style={[styles.button, loading && styles.buttonDisabled]} 
+              style={[styles.signupButton, loading && styles.signupButtonDisabled]} 
               onPress={handleSignup}
               disabled={loading}
+              activeOpacity={0.8}
             >
-              <Text style={styles.buttonText}>
-                {loading ? '⏳ Creating Your Account...' : '🚀 START MY JOURNEY!'}
+              <Text style={styles.signupButtonText}>
+                {loading ? 'Creating Account...' : 'Create Account'}
               </Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity onPress={() => navigation.navigate('Login')}>
-              <Text style={styles.linkText}>
-                Already crushing it? <Text style={styles.linkBold}>Sign In</Text>
+
+            <TouchableOpacity 
+              onPress={() => navigation.navigate('Login')}
+              style={styles.loginContainer}
+            >
+              <Text style={styles.loginText}>
+                Already have an account? <Text style={styles.loginLink}>Sign In</Text>
               </Text>
             </TouchableOpacity>
           </View>
-          
+
           {/* Terms Section */}
           <View style={styles.termsContainer}>
             <Text style={styles.termsText}>
-              By joining, you agree to push your limits and follow our{'\n'}
+              By creating an account, you agree to our{'\n'}
               <Text style={styles.termsLink}>Terms of Service</Text> and <Text style={styles.termsLink}>Privacy Policy</Text>
             </Text>
           </View>
+        </View>
 
-          {/* Motivational Footer */}
-          <View style={styles.footer}>
-            <Text style={styles.motivationText}>
-              "The body achieves what the mind believes"
-            </Text>
+        {/* Bottom Section */}
+        <View style={styles.bottomSection}>
+          <View style={styles.motivationContainer}>
+            <Text style={styles.motivationText}>Begin Your Journey</Text>
+            <View style={styles.motivationDot} />
           </View>
-        </ScrollView>
-      </View>
+        </View>
+      </ScrollView>
     </View>
   );
 }
@@ -166,126 +203,164 @@ export default function SignupScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#FFFFFF',
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+  backgroundGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '40%',
+    backgroundColor: '#FF6B35',
+    opacity: 0.03,
   },
   scrollContainer: {
     flexGrow: 1,
-    justifyContent: 'space-between',
-    padding: 20,
-    paddingTop: 50,
+    paddingHorizontal: 24,
   },
   header: {
     alignItems: 'center',
-    marginBottom: 20,
+    paddingTop: 50,
+    paddingBottom: 30,
   },
-  appName: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    color: '#FF6B35',
+  logoContainer: {
+    alignItems: 'center',
     marginBottom: 8,
   },
-  title: {
+  logo: {
     fontSize: 32,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#FFFFFF',
-    marginBottom: 8,
+    fontWeight: '800',
+    color: '#1F2937',
+    letterSpacing: 2,
   },
-  subtitle: {
-    fontSize: 18,
-    textAlign: 'center',
-    color: '#B0B0B0',
-    marginBottom: 20,
+  logoAccent: {
+    width: 40,
+    height: 3,
+    backgroundColor: '#FF6B35',
+    borderRadius: 2,
+    marginTop: 4,
+  },
+  tagline: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    letterSpacing: 0.5,
+  },
+  content: {
+    flex: 1,
+  },
+  welcomeSection: {
+    marginBottom: 40,
+  },
+  welcomeTitle: {
+    fontSize: 28,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 6,
+  },
+  welcomeSubtitle: {
+    fontSize: 16,
+    color: '#6B7280',
+    fontWeight: '400',
   },
   formContainer: {
-    flex: 1,
-    maxHeight: 500,
+    marginBottom: 32,
   },
   nameRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    marginBottom: 24,
+  },
+  nameInputContainer: {
+    flex: 1,
+    marginHorizontal: 6,
+  },
+  inputContainer: {
+    marginBottom: 28,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 25,
-    marginBottom: 20,
     fontSize: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    color: '#1F2937',
+    paddingVertical: 16,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    fontWeight: '500',
   },
-  nameInput: {
-    flex: 1,
-    marginHorizontal: 5,
+  inputLine: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginTop: 4,
   },
-  button: {
+  signupButton: {
     backgroundColor: '#FF6B35',
     paddingVertical: 18,
-    borderRadius: 25,
-    marginBottom: 20,
-    marginTop: 10,
+    borderRadius: 12,
+    marginTop: 8,
+    marginBottom: 24,
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  buttonDisabled: {
+  signupButtonDisabled: {
     backgroundColor: '#CC5429',
-    opacity: 0.7,
+    opacity: 0.6,
   },
-  buttonText: {
-    color: 'white',
+  signupButtonText: {
+    color: '#FFFFFF',
     textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 18,
-    letterSpacing: 1,
-  },
-  linkText: {
-    textAlign: 'center',
-    color: '#B0B0B0',
+    fontWeight: '600',
     fontSize: 16,
-    marginTop: 10,
+    letterSpacing: 0.5,
   },
-  linkBold: {
+  loginContainer: {
+    alignItems: 'center',
+  },
+  loginText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '400',
+  },
+  loginLink: {
     color: '#FF6B35',
-    fontWeight: 'bold',
+    fontWeight: '600',
   },
   termsContainer: {
-    marginTop: 20,
-    paddingHorizontal: 10,
+    marginTop: 24,
+    marginBottom: 32,
   },
   termsText: {
     textAlign: 'center',
-    color: '#888',
-    fontSize: 13,
+    color: '#9CA3AF',
+    fontSize: 12,
     lineHeight: 18,
+    fontWeight: '400',
   },
   termsLink: {
     color: '#FF6B35',
     fontWeight: '500',
   },
-  footer: {
+  bottomSection: {
+    paddingBottom: 32,
     alignItems: 'center',
-    marginTop: 20,
-    marginBottom: 20,
+  },
+  motivationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   motivationText: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: '#FF6B35',
-    textAlign: 'center',
+    fontSize: 12,
+    color: '#9CA3AF',
     fontWeight: '500',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  motivationDot: {
+    width: 4,
+    height: 4,
+    backgroundColor: '#FF6B35',
+    borderRadius: 2,
+    marginLeft: 8,
   },
 });

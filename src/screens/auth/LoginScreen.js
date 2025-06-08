@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ImageBackground } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, StatusBar } from 'react-native';
 import { signIn } from '../../services/firebase/authService';
 
 export default function LoginScreen({ navigation }) {
@@ -24,57 +24,80 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <View style={styles.overlay}>
-        {/* Header Section */}
-        <View style={styles.header}>
-          <Text style={styles.appName}>PUMP</Text>
-          <Text style={styles.title}>Feel the power!</Text>
-          <Text style={styles.subtitle}>Welcome back, champion!</Text>
+      <StatusBar barStyle="dark-content" backgroundColor="#FFFFFF" />
+      
+      {/* Background Gradient Effect */}
+      <View style={styles.backgroundGradient} />
+      
+      {/* Header */}
+      <View style={styles.header}>
+        <View style={styles.logoContainer}>
+          <Text style={styles.logo}>PUMP</Text>
+          <View style={styles.logoAccent} />
         </View>
-        
-        {/* Form Section */}
-        <View style={styles.formContainer}>
-          <TextInput
-            style={styles.input}
-            placeholder="📧 Your Email"
-            placeholderTextColor="#999"
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          
-          <TextInput
-            style={styles.input}
-            placeholder="🔒 Password"
-            placeholderTextColor="#999"
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-          
-          <TouchableOpacity 
-            style={[styles.button, loading && styles.buttonDisabled]} 
-            onPress={handleLogin}
-            disabled={loading}
-          >
-            <Text style={styles.buttonText}>
-              {loading ? '🔄 Logging In...' : 'LET\'S GO!'}
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity onPress={() => navigation.navigate('Signup')}>
-            <Text style={styles.linkText}>
-              New to the gym? <Text style={styles.linkBold}>Join the Squad!</Text>
-            </Text>
-          </TouchableOpacity>
+        <Text style={styles.tagline}>Unlock Your Potential</Text>
+      </View>
+
+      {/* Main Content */}
+      <View style={styles.content}>
+        <View style={styles.welcomeSection}>
+          <Text style={styles.welcomeTitle}>Welcome Back</Text>
+          <Text style={styles.welcomeSubtitle}>Ready to crush your goals?</Text>
         </View>
 
-        {/* Motivational Footer */}
-        <View style={styles.footer}>
-          <Text style={styles.motivationText}>
-            "Your only limit is YOU"
-          </Text>
+        <View style={styles.formContainer}>
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              placeholderTextColor="#9CA3AF"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
+            <View style={styles.inputLine} />
+          </View>
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor="#9CA3AF"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            <View style={styles.inputLine} />
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.loginButton, loading && styles.loginButtonDisabled]} 
+            onPress={handleLogin}
+            disabled={loading}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.loginButtonText}>
+              {loading ? 'Signing In...' : 'Sign In'}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            onPress={() => navigation.navigate('Signup')}
+            style={styles.signupContainer}
+          >
+            <Text style={styles.signupText}>
+              Don't have an account? <Text style={styles.signupLink}>Sign Up</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+
+      {/* Bottom Section */}
+      <View style={styles.bottomSection}>
+        <View style={styles.motivationContainer}>
+          <Text style={styles.motivationText}>Transform Today</Text>
+          <View style={styles.motivationDot} />
         </View>
       </View>
     </View>
@@ -84,98 +107,138 @@ export default function LoginScreen({ navigation }) {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1a1a1a',
+    backgroundColor: '#FFFFFF',
   },
-  overlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.3)',
-    justifyContent: 'space-between',
-    padding: 20,
+  backgroundGradient: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: '50%',
+    backgroundColor: '#FF6B35',
+    opacity: 0.03,
   },
   header: {
     alignItems: 'center',
-    marginTop: 60,
+    paddingTop: 60,
+    paddingBottom: 40,
   },
-  appName: {
-    fontSize: 32,
-    fontWeight: 'bold',
-    color: '#FF6B35',
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-    textAlign: 'center',
-    color: '#FFFFFF',
+  logoContainer: {
+    alignItems: 'center',
     marginBottom: 8,
   },
-  subtitle: {
+  logo: {
+    fontSize: 36,
+    fontWeight: '800',
+    color: '#1F2937',
+    letterSpacing: 2,
+  },
+  logoAccent: {
+    width: 40,
+    height: 3,
+    backgroundColor: '#FF6B35',
+    borderRadius: 2,
+    marginTop: 4,
+  },
+  tagline: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
+    letterSpacing: 0.5,
+  },
+  content: {
+    flex: 1,
+    paddingHorizontal: 24,
+  },
+  welcomeSection: {
+    marginBottom: 48,
+  },
+  welcomeTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginBottom: 8,
+  },
+  welcomeSubtitle: {
     fontSize: 16,
-    textAlign: 'center',
-    color: '#B0B0B0',
-    marginBottom: 20,
+    color: '#6B7280',
+    fontWeight: '400',
   },
   formContainer: {
     flex: 1,
-    justifyContent: 'center',
-    maxHeight: 300,
+    maxHeight: 280,
+  },
+  inputContainer: {
+    marginBottom: 32,
   },
   input: {
-    backgroundColor: 'rgba(255, 255, 255, 0.95)',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderRadius: 25,
-    marginBottom: 20,
     fontSize: 16,
-    borderWidth: 2,
-    borderColor: 'transparent',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
-    elevation: 3,
+    color: '#1F2937',
+    paddingVertical: 16,
+    paddingHorizontal: 0,
+    backgroundColor: 'transparent',
+    fontWeight: '500',
   },
-  button: {
+  inputLine: {
+    height: 1,
+    backgroundColor: '#E5E7EB',
+    marginTop: 4,
+  },
+  loginButton: {
     backgroundColor: '#FF6B35',
     paddingVertical: 18,
-    borderRadius: 25,
-    marginBottom: 20,
+    borderRadius: 12,
+    marginTop: 16,
+    marginBottom: 32,
     shadowColor: '#FF6B35',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-    elevation: 5,
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 8,
   },
-  buttonDisabled: {
+  loginButtonDisabled: {
     backgroundColor: '#CC5429',
-    opacity: 0.7,
+    opacity: 0.6,
   },
-  buttonText: {
-    color: 'white',
+  loginButtonText: {
+    color: '#FFFFFF',
     textAlign: 'center',
-    fontWeight: 'bold',
-    fontSize: 18,
-    letterSpacing: 1,
-  },
-  linkText: {
-    textAlign: 'center',
-    color: '#B0B0B0',
+    fontWeight: '600',
     fontSize: 16,
-    marginTop: 10,
+    letterSpacing: 0.5,
   },
-  linkBold: {
-    color: '#FF6B35',
-    fontWeight: 'bold',
-  },
-  footer: {
+  signupContainer: {
     alignItems: 'center',
-    marginBottom: 40,
+  },
+  signupText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '400',
+  },
+  signupLink: {
+    color: '#FF6B35',
+    fontWeight: '600',
+  },
+  bottomSection: {
+    paddingBottom: 40,
+    alignItems: 'center',
+  },
+  motivationContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   motivationText: {
-    fontSize: 16,
-    fontStyle: 'italic',
-    color: '#FF6B35',
-    textAlign: 'center',
+    fontSize: 12,
+    color: '#9CA3AF',
     fontWeight: '500',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  motivationDot: {
+    width: 4,
+    height: 4,
+    backgroundColor: '#FF6B35',
+    borderRadius: 2,
+    marginLeft: 8,
   },
 });

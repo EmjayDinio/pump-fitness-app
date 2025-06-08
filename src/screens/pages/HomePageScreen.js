@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -6,16 +6,29 @@ import {
   ScrollView,
   Modal,
   Alert,
+  FlatList,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
-import styles from './HomePageScreen.styles'; // Import styles
+import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import styles from './HomePageScreen.styles';
 
 const HomePageScreen = () => {
   const navigation = useNavigation();
+  const route = useRoute();
   const [modalVisible, setModalVisible] = useState(false);
   const [selectedGoal, setSelectedGoal] = useState('');
   const [selectedBodyParts, setSelectedBodyParts] = useState([]);
   const [selectedDifficulty, setSelectedDifficulty] = useState('');
+  
+  // Workout tracking state
+  const [workoutHistory, setWorkoutHistory] = useState([]);
+  const [weeklyStats, setWeeklyStats] = useState({
+    thisWeek: 0,
+    totalWorkouts: 0,
+    totalTime: 0,
+    avgCompletion: 0,
+  });
+  const [weeklyProgress, setWeeklyProgress] = useState(Array(7).fill(false));
 
   const fitnessGoals = [
     { label: 'Cardio', apiType: 'cardio' },
@@ -45,6 +58,151 @@ const HomePageScreen = () => {
     { label: 'Intermediate', apiDifficulty: 'intermediate' },
     { label: 'Expert', apiDifficulty: 'expert' }
   ];
+
+  // Storage keys
+  const WORKOUT_HISTORY_KEY = '@workout_history';
+
+  // Utility functions
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', {
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getDayOfWeek = (dateString) => {
+    return new Date(dateString).getDay(); // 0 = Sunday, 1 = Monday, etc.
+  };
+
+  const isThisWeek = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const startOfWeek = new Date(now.setDate(now.getDate() - now.getDay()));
+    startOfWeek.setHours(0, 0, 0, 0);
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    return date >= startOfWeek && date <= endOfWeek;
+  };
+
+  // Load workout history from storage
+  const loadWorkoutHistory = useCallback(async () => {
+    try {
+      console.log('📚 Loading workout history from storage...');
+      const storedHistory = await AsyncStorage.getItem(WORKOUT_HISTORY_KEY);
+      if (storedHistory) {
+        const parsedHistory = JSON.parse(storedHistory);
+        console.log('✅ Loaded workout history:', parsedHistory.length, 'workouts');
+        setWorkoutHistory(parsedHistory);
+        return parsedHistory;
+      } else {
+        console.log('📭 No workout history found in storage');
+        setWorkoutHistory([]);
+        return [];
+      }
+    } catch (error) {
+      console.error('❌ Error loading workout history:', error);
+      setWorkoutHistory([]);
+      return [];
+    }
+  }, []);
+
+  // Save workout history to storage
+  const saveWorkoutHistory = useCallback(async (history) => {
+    try {
+      await AsyncStorage.setItem(WORKOUT_HISTORY_KEY, JSON.stringify(history));
+      console.log('💾 Saved workout history:', history.length, 'workouts');
+    } catch (error) {
+      console.error('❌ Error saving workout history:', error);
+    }
+  }, []);
+
+  // Calculate and update workout stats
+  const updateWorkoutStats = useCallback((history) => {
+    console.log('📊 Updating workout stats with', history.length, 'workouts');
+    
+    const thisWeekWorkouts = history.filter(workout => isThisWeek(workout.date));
+    const totalTime = history.reduce((sum, workout) => sum + (workout.duration || 0), 0);
+    const avgCompletion = history.length > 0 
+      ? history.reduce((sum, workout) => sum + (workout.completionRate || 0), 0) / history.length
+      : 0;
+
+    // Update weekly progress grid
+    const newWeeklyProgress = Array(7).fill(false);
+    thisWeekWorkouts.forEach(workout => {
+      const dayIndex = getDayOfWeek(workout.date);
+      newWeeklyProgress[dayIndex] = true;
+    });
+
+    const newStats = {
+      thisWeek: thisWeekWorkouts.length,
+      totalWorkouts: history.length,
+      totalTime: totalTime,
+      avgCompletion: Math.round(avgCompletion),
+    };
+
+    console.log('📈 Updated stats:', newStats);
+    
+    setWeeklyStats(newStats);
+    setWeeklyProgress(newWeeklyProgress);
+  }, []);
+
+  // Force refresh all data from storage
+  const refreshAllData = useCallback(async () => {
+    console.log('🔄 Force refreshing all data...');
+    try {
+      const freshHistory = await loadWorkoutHistory();
+      updateWorkoutStats(freshHistory);
+      console.log('✅ Data refresh completed');
+    } catch (error) {
+      console.error('❌ Error during data refresh:', error);
+    }
+  }, [loadWorkoutHistory, updateWorkoutStats]);
+
+  // Handle screen focus and route params
+  useFocusEffect(
+    useCallback(() => {
+      console.log('👁️ HomePageScreen focused with params:', route.params);
+      
+      // Check if we need to refresh due to workout completion
+      const shouldRefresh = route.params?.workoutCompleted || route.params?.refreshTrigger;
+      
+      if (shouldRefresh) {
+        console.log('🔄 Workout completed detected, refreshing data...');
+        
+        // Add a small delay to ensure WorkoutScreen has finished saving
+        setTimeout(() => {
+          refreshAllData();
+        }, 100);
+        
+        // Clear the params to prevent unnecessary refreshes
+        navigation.setParams({ 
+          workoutCompleted: undefined,
+          refreshTrigger: undefined
+        });
+      } else {
+        // Normal focus, just load data
+        console.log('👁️ Normal focus, loading data...');
+        refreshAllData();
+      }
+    }, [route.params?.workoutCompleted, route.params?.refreshTrigger, refreshAllData, navigation])
+  );
+
+  // Initial load on component mount
+  useEffect(() => {
+    console.log('🏠 HomePageScreen mounted, initial data load...');
+    refreshAllData();
+  }, [refreshAllData]);
 
   const handleBodyPartToggle = (bodyPart) => {
     setSelectedBodyParts(prev =>
@@ -86,6 +244,75 @@ const HomePageScreen = () => {
     setSelectedDifficulty('');
   };
 
+  const clearWorkoutHistory = () => {
+    Alert.alert(
+      'Clear History',
+      'Are you sure you want to clear all workout history?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: 'Clear', 
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setWorkoutHistory([]);
+              await AsyncStorage.removeItem(WORKOUT_HISTORY_KEY);
+              updateWorkoutStats([]);
+              console.log('🗑️ Workout history cleared');
+            } catch (error) {
+              console.error('❌ Error clearing workout history:', error);
+            }
+          }
+        }
+      ]
+    );
+  };
+
+  const renderWorkoutHistoryItem = ({ item, index }) => (
+    <View style={styles.historyItem}>
+      <View style={styles.historyHeader}>
+        <Text style={styles.historyGoal}>{item.goal}</Text>
+        <Text style={styles.historyDate}>{formatDate(item.date)}</Text>
+      </View>
+      
+      <View style={styles.historyDetails}>
+        <View style={styles.historyDetailRow}>
+          <Text style={styles.historyLabel}>Duration:</Text>
+          <Text style={styles.historyValue}>{formatTime(item.duration || 0)}</Text>
+        </View>
+        
+        <View style={styles.historyDetailRow}>
+          <Text style={styles.historyLabel}>Exercises:</Text>
+          <Text style={styles.historyValue}>
+            {item.completedExercises || 0}/{item.totalExercises || 0}
+          </Text>
+        </View>
+        
+        <View style={styles.historyDetailRow}>
+          <Text style={styles.historyLabel}>Completion:</Text>
+          <Text style={[
+            styles.historyValue,
+            { color: (item.completionRate || 0) >= 80 ? '#28a745' : (item.completionRate || 0) >= 60 ? '#ffc107' : '#dc3545' }
+          ]}>
+            {item.completionRate || 0}%
+          </Text>
+        </View>
+      </View>
+
+      {item.bodyParts && item.bodyParts.length > 0 && (
+        <View style={styles.historyBodyParts}>
+          {item.bodyParts.map((part, idx) => (
+            <View key={idx} style={styles.historyBodyPartChip}>
+              <Text style={styles.historyBodyPartText}>{part}</Text>
+            </View>
+          ))}
+        </View>
+      )}
+    </View>
+  );
+
+  const dayLabels = ['S', 'M', 'T', 'W', 'T', 'F', 'S'];
+
   return (
     <View style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -94,11 +321,60 @@ const HomePageScreen = () => {
           <Text style={styles.headerSubtitle}>Ready to crush your goals today?</Text>
         </View>
 
+        {/* Progress Tracker Section */}
+        <View style={styles.progressSection}>
+          <Text style={styles.sectionTitle}>📊 Your Progress</Text>
+          
+          {/* Weekly Stats */}
+          <View style={styles.statsContainer}>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>{weeklyStats.thisWeek}</Text>
+              <Text style={styles.statLabel}>This Week</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>{weeklyStats.totalWorkouts}</Text>
+              <Text style={styles.statLabel}>Total Workouts</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>{formatTime(weeklyStats.totalTime)}</Text>
+              <Text style={styles.statLabel}>Total Time</Text>
+            </View>
+            <View style={styles.statCard}>
+              <Text style={styles.statNumber}>{weeklyStats.avgCompletion}%</Text>
+              <Text style={styles.statLabel}>Avg Completion</Text>
+            </View>
+          </View>
+
+          {/* Weekly Progress Grid */}
+          <View style={styles.weeklyTrackerContainer}>
+            <Text style={styles.weeklyTrackerTitle}>This Week's Activity</Text>
+            <View style={styles.weeklyRow}>
+              {dayLabels.map((day, index) => (
+                <View key={index} style={styles.dayContainer}>
+                  <View style={[
+                    styles.dayButton,
+                    weeklyProgress[index] && styles.dayButtonActive
+                  ]}>
+                    <Text style={[
+                      styles.dayText,
+                      weeklyProgress[index] && styles.dayTextActive
+                    ]}>
+                      {day}
+                    </Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        {/* Create Workout Button */}
         <TouchableOpacity style={styles.mainButton} onPress={() => setModalVisible(true)}>
           <Text style={styles.mainButtonText}>🎯 Create Custom Workout</Text>
           <Text style={styles.mainButtonSubtext}>Set goals, select muscles & difficulty</Text>
         </TouchableOpacity>
 
+        {/* Current Selections Preview */}
         {(selectedGoal || selectedBodyParts.length > 0 || selectedDifficulty) && (
           <View style={styles.previewContainer}>
             <Text style={styles.previewTitle}>Current Selections:</Text>
@@ -112,18 +388,44 @@ const HomePageScreen = () => {
           </View>
         )}
 
-        <View style={styles.statsContainer}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Workouts This Week</Text>
+        {/* Workout History Section */}
+        {workoutHistory.length > 0 && (
+          <View style={styles.historySection}>
+            <View style={styles.historySectionHeader}>
+              <Text style={styles.sectionTitle}>📈 Workout History</Text>
+              <TouchableOpacity onPress={clearWorkoutHistory} style={styles.clearButton}>
+                <Text style={styles.clearButtonText}>Clear</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <FlatList
+              data={workoutHistory.slice(0, 10)} // Show only recent 10
+              renderItem={renderWorkoutHistoryItem}
+              keyExtractor={(item) => item.id}
+              scrollEnabled={false}
+              showsVerticalScrollIndicator={false}
+            />
+            
+            {workoutHistory.length > 10 && (
+              <Text style={styles.moreHistoryText}>
+                Showing 10 most recent workouts of {workoutHistory.length} total
+              </Text>
+            )}
           </View>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>0</Text>
-            <Text style={styles.statLabel}>Goals Completed</Text>
+        )}
+
+        {/* Motivational Message for No History */}
+        {workoutHistory.length === 0 && (
+          <View style={styles.motivationCard}>
+            <Text style={styles.motivationText}>
+              "Your fitness journey starts with a single workout. Let's make it happen! 💪"
+            </Text>
           </View>
-        </View>
+        )}
+        
       </ScrollView>
 
+      {/* Workout Creation Modal */}
       <Modal animationType="slide" transparent visible={modalVisible}>
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
@@ -219,134 +521,5 @@ const HomePageScreen = () => {
     </View>
   );
 };
-const videoStyles = {
-  // Video section in exercise card
-  videoSection: {
-    marginTop: 12,
-    padding: 12,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: '#FF6B6B',
-  },
-  videoLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#333',
-    marginBottom: 8,
-  },
-  videoButton: {
-    backgroundColor: '#FF6B6B',
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 6,
-    alignItems: 'center',
-  },
-  videoButtonText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '600',
-  },
-  
-  // Exercise button container (for side-by-side buttons)
-  exerciseButtonContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: 12,
-    gap: 10,
-  },
-  startButton: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  videoQuickButton: {
-    backgroundColor: '#FF6B6B',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-    minWidth: 50,
-  },
-  videoQuickButtonText: {
-    fontSize: 18,
-  },
-  
-  // Video Modal Styles
-  videoModalContainer: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  videoModalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e1e5e9',
-    paddingTop: 50, // Account for status bar
-  },
-  videoModalTitle: {
-    fontSize: 18,
-    fontWeight: '700',
-    color: '#333',
-    flex: 1,
-  },
-  closeButton: {
-    padding: 8,
-    backgroundColor: '#f8f9fa',
-    borderRadius: 20,
-    width: 36,
-    height: 36,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  closeButtonText: {
-    fontSize: 18,
-    color: '#666',
-    fontWeight: '600',
-  },
-  
-  // Video container
-  videoContainer: {
-    height: 220,
-    backgroundColor: '#000',
-    margin: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-  },
-  webView: {
-    flex: 1,
-  },
-  
-  // Video info section
-  videoInfo: {
-    padding: 16,
-    flex: 1,
-  },
-  videoInstructions: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: '#333',
-    marginBottom: 16,
-  },
-  videoDetails: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-    backgroundColor: '#f8f9fa',
-    padding: 16,
-    borderRadius: 12,
-    marginTop: 16,
-  },
-  videoDetailText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#666',
-  },
-};
-
 
 export default HomePageScreen;

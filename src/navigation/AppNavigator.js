@@ -4,13 +4,19 @@ import { createStackNavigator } from '@react-navigation/stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Text } from 'react-native';
 
+// Screens
 import LoginScreen from '../screens/auth/LoginScreen';
 import SignupScreen from '../screens/auth/SignupScreen';
 import ProfileScreen from '../screens/profile/ProfileScreen';
 import HomePageScreen from '../screens/pages/HomePageScreen';
 import MealTrackingScreen from '../screens/pages/MealTrackingScreen';
-import WorkoutSelection from '../screens/workout/WorkoutSelection'; // ✅ Import added
+import WorkoutSelection from '../screens/workout/WorkoutSelection';
 import WorkoutScreen from '../screens/workout/WorkoutScreen';
+
+// Support Screens
+import HelpFAQScreen from '../screens/support/HelpFAQScreen';
+import ContactSupportScreen from '../screens/support/ContactSupportScreen';
+import RateAppScreen from '../screens/support/RateAppScreen';
 
 const Stack = createStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -23,7 +29,7 @@ const AuthStack = () => (
   </Stack.Navigator>
 );
 
-// ✅ Home stack for HomePage and WorkoutSelection
+// Home stack for HomePage and WorkoutSelection
 const HomeStack = () => (
   <Stack.Navigator screenOptions={{ headerShown: false }}>
     <Stack.Screen name="HomePageScreen" component={HomePageScreen} />
@@ -31,7 +37,7 @@ const HomeStack = () => (
   </Stack.Navigator>
 );
 
-// Main tab navigator for the app
+// Tab navigator for the main app
 const MainTabs = () => (
   <Tab.Navigator
     screenOptions={{
@@ -75,11 +81,21 @@ const MainTabs = () => (
   </Tab.Navigator>
 );
 
+// App stack with support screens
+const MainAppStack = () => (
+  <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Screen name="MainTabs" component={MainTabs} />
+    <Stack.Screen name="HelpFAQ" component={HelpFAQScreen} />
+    <Stack.Screen name="ContactSupport" component={ContactSupportScreen} />
+    <Stack.Screen name="RateApp" component={RateAppScreen} />
+  </Stack.Navigator>
+);
+
 // Root navigator
 export default function AppNavigator({ user }) {
   return (
     <NavigationContainer>
-      {user ? <MainTabs /> : <AuthStack />}
+      {user ? <MainAppStack /> : <AuthStack />}
     </NavigationContainer>
   );
 }
