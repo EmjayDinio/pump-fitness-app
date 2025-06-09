@@ -24,14 +24,14 @@ const UsersIcon = () => <Text style={styles.icon}>👥</Text>;
 const SettingsIcon = () => <Text style={styles.icon}>⚙️</Text>;
 const CreditIcon = () => <Text style={styles.icon}>💳</Text>;
 const MessageIcon = () => <Text style={styles.icon}>💬</Text>;
-const BackIcon = () => <Text style={styles.backIcon}>←</Text>;
+const BackIcon = () => <Text style={styles.iconText}>←</Text>;
 
 export default function HelpFAQScreen({ navigation }) {
   const [expandedItems, setExpandedItems] = useState(new Set());
   const [searchTerm, setSearchTerm] = useState('');
   const [animatedValues] = useState({});
 
-  const handleGoBack = () => {
+  const handleBackPress = () => {
     // If using React Navigation
     if (navigation && navigation.goBack) {
       navigation.goBack();
@@ -199,25 +199,27 @@ export default function HelpFAQScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Header with Back Button */}
+      {/* Header with Back Button - Same style as RateAppScreen */}
       <View style={styles.header}>
         <TouchableOpacity 
-          style={styles.backButton}
-          onPress={handleGoBack}
+          style={styles.backButton} 
+          onPress={handleBackPress}
           activeOpacity={0.7}
         >
           <BackIcon />
+          <Text style={styles.backText}>Back</Text>
         </TouchableOpacity>
-        
-        <View style={styles.headerContent}>
-          <View style={styles.headerIcon}>
-            <HelpIcon />
-          </View>
-          <Text style={styles.title}>Help & FAQ</Text>
-          <Text style={styles.subtitle}>
-            Find answers to commonly asked questions about our app
-          </Text>
+      </View>
+
+      {/* Title Section */}
+      <View style={styles.titleSection}>
+        <View style={styles.headerIcon}>
+          <HelpIcon />
         </View>
+        <Text style={styles.title}>Help & FAQ</Text>
+        <Text style={styles.subtitle}>
+          Find answers to commonly asked questions about our app
+        </Text>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
@@ -305,31 +307,34 @@ const styles = StyleSheet.create({
   },
   header: {
     backgroundColor: '#FFFFFF',
-    paddingHorizontal: 20,
-    paddingVertical: 32,
     borderBottomWidth: 1,
     borderBottomColor: '#E5E7EB',
   },
   backButton: {
-    position: 'absolute',
-    top: 32,
-    left: 20,
-    zIndex: 1,
-    width: 40,
-    height: 40,
-    justifyContent: 'center',
+    flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#F3F4F6',
-    borderRadius: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: 8,
   },
-  backIcon: {
-    fontSize: 20,
-    color: '#374151',
+  backText: {
+    fontSize: 16,
+    color: '#3B82F6',
+    fontWeight: '500',
+    marginLeft: 4,
+  },
+  iconText: {
+    fontSize: 18,
+    color: '#3B82F6',
     fontWeight: 'bold',
   },
-  headerContent: {
+  titleSection: {
+    backgroundColor: '#FFFFFF',
+    paddingHorizontal: 20,
+    paddingVertical: 32,
     alignItems: 'center',
-    marginTop: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
   },
   headerIcon: {
     width: 64,

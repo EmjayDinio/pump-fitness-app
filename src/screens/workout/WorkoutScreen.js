@@ -1220,22 +1220,28 @@ const generateMockExercises = (bodyParts, goal, difficulty = 'beginner') => {
                 </TouchableOpacity>
               )}
 
-              {workoutStarted && (
-                <TouchableOpacity 
-                  style={styles.pauseButton}
-                  onPress={() => {
-                    setIsTimerRunning(!isTimerRunning);
-                    Alert.alert(
-                      isTimerRunning ? 'Workout Paused' : 'Workout Resumed',
-                      isTimerRunning ? 'Take your time!' : 'Let\'s continue!'
-                    );
-                  }}
-                >
-                  <Text style={styles.pauseButtonText}>
-                    {isTimerRunning ? '⏸️ Pause Workout' : '▶️ Resume Workout'}
-                  </Text>
-                </TouchableOpacity>
-              )}
+{workoutStarted && (
+  <TouchableOpacity 
+    style={styles.pauseButton}
+    onPress={() => {
+      if (isTimerRunning) {
+        // Pausing workout
+        setIsTimerRunning(false);
+        setShowExerciseModal(false); // Close modal when pausing
+        Alert.alert('Workout Paused', 'Take your time!');
+      } else {
+        // Resuming workout
+        setIsTimerRunning(true);
+        setShowExerciseModal(true); // Reopen modal when resuming
+        Alert.alert('Workout Resumed', 'Let\'s continue!');
+      }
+    }}
+  >
+    <Text style={styles.pauseButtonText}>
+      {isTimerRunning ? '⏸️ Pause Workout' : '▶️ Resume Workout'}
+    </Text>
+  </TouchableOpacity>
+)}
             </>
           ) : (
             <View style={styles.noSelectionContainer}>

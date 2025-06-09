@@ -15,54 +15,11 @@ import {
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import axios from 'axios';
 import Svg, { Circle, Path, G, Text as SvgText } from 'react-native-svg';
-import { Platform } from 'react-native'
 
 const { width: screenWidth } = Dimensions.get('window');
 const CALORIE_NINJAS_API_KEY = 'xDzK4Es7NP0bZzKHsd2Cgg==et5GnW8BwI0v68Tc';
 
-// Under Development Banner Component
-const UnderDevelopmentBanner = () => (
-  <View style={styles.devBanner}>
-    <View style={styles.devBannerContent}>
-      <Text style={styles.devBannerIcon}>🚧</Text>
-      <View style={styles.devBannerTextContainer}>
-        <Text style={styles.devBannerTitle}>Under Development</Text>
-        <Text style={styles.devBannerSubtitle}>Some features may not work as expected</Text>
-      </View>
-    </View>
-  </View>
-);
-
-// Development Notice Modal
-const DevelopmentNoticeModal = ({ visible, onClose }) => (
-  <Modal
-    animationType="fade"
-    transparent={true}
-    visible={visible}
-    onRequestClose={onClose}
-  >
-    <View style={styles.noticeModalOverlay}>
-      <View style={styles.noticeModalContent}>
-        <Text style={styles.noticeIcon}>⚠️</Text>
-        <Text style={styles.noticeTitle}>Development Version</Text>
-        <Text style={styles.noticeText}>
-          This app is currently under development. Some features may be incomplete or temporarily unavailable:
-        </Text>
-        <View style={styles.noticeList}>
-          <Text style={styles.noticeListItem}>• Nutrition data fetching</Text>
-          <Text style={styles.noticeListItem}>• Data persistence</Text>
-          <Text style={styles.noticeListItem}>• Real-time calculations</Text>
-          <Text style={styles.noticeListItem}>• Chart accuracy</Text>
-        </View>
-        <TouchableOpacity style={styles.noticeButton} onPress={onClose}>
-          <Text style={styles.noticeButtonText}>I Understand</Text>
-        </TouchableOpacity>
-      </View>
-    </View>
-  </Modal>
-);
-
-// Circular Progress Component with Dev Overlay
+// Circular Progress Component
 const CircularProgress = ({ size = 80, strokeWidth = 8, progress = 0, color = '#4CAF50', backgroundColor = '#E8F5E8' }) => {
   const radius = (size - strokeWidth) / 2;
   const circumference = radius * 2 * Math.PI;
@@ -71,44 +28,34 @@ const CircularProgress = ({ size = 80, strokeWidth = 8, progress = 0, color = '#
   const center = size / 2;
 
   return (
-    <View style={styles.progressContainer}>
-      <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={backgroundColor}
-          strokeWidth={strokeWidth}
-          fill="transparent"
-        />
-        <Circle
-          cx={center}
-          cy={center}
-          r={radius}
-          stroke={color}
-          strokeWidth={strokeWidth}
-          strokeDasharray={strokeDasharray}
-          strokeDashoffset={strokeDashoffset}
-          strokeLinecap="round"
-          fill="transparent"
-          opacity={0.6} // Dimmed for dev mode
-        />
-      </Svg>
-      <View style={styles.devOverlay}>
-        <Text style={styles.devOverlayText}>DEV</Text>
-      </View>
-    </View>
+    <Svg width={size} height={size} style={{ transform: [{ rotate: '-90deg' }] }}>
+      <Circle
+        cx={center}
+        cy={center}
+        r={radius}
+        stroke={backgroundColor}
+        strokeWidth={strokeWidth}
+        fill="transparent"
+      />
+      <Circle
+        cx={center}
+        cy={center}
+        r={radius}
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeDasharray={strokeDasharray}
+        strokeDashoffset={strokeDashoffset}
+        strokeLinecap="round"
+        fill="transparent"
+      />
+    </Svg>
   );
 };
 
 // Macro Distribution Chart Component
 const MacroChart = ({ protein, carbs, fat, size = 120 }) => {
   const total = protein + carbs + fat;
-  if (total === 0) return (
-    <View style={[styles.devPlaceholder, { width: size, height: size, borderRadius: size/2 }]}>
-      <Text style={styles.devPlaceholderText}>Chart\nN/A</Text>
-    </View>
-  );
+  if (total === 0) return null;
 
   const center = size / 2;
   const radius = size / 2 - 10;
@@ -139,16 +86,11 @@ const MacroChart = ({ protein, carbs, fat, size = 120 }) => {
   const fatPath = createArc(currentAngle, currentAngle + fatAngle, '#9C27B0');
 
   return (
-    <View style={styles.chartWithOverlay}>
-      <Svg width={size} height={size} style={{ opacity: 0.6 }}>
-        <Path d={proteinPath} fill="#2196F3" />
-        <Path d={carbsPath} fill="#FF9800" />
-        <Path d={fatPath} fill="#9C27B0" />
-      </Svg>
-      <View style={styles.chartDevOverlay}>
-        <Text style={styles.chartDevText}>BETA</Text>
-      </View>
-    </View>
+    <Svg width={size} height={size}>
+      <Path d={proteinPath} fill="#2196F3" />
+      <Path d={carbsPath} fill="#FF9800" />
+      <Path d={fatPath} fill="#9C27B0" />
+    </Svg>
   );
 };
 
@@ -160,13 +102,8 @@ const WeeklyChart = ({ data, width = screenWidth - 40, height = 100 }) => {
   
   return (
     <View style={styles.chartContainer}>
-      <View style={styles.chartTitleContainer}>
-        <Text style={styles.chartTitle}>Weekly Calories</Text>
-        <View style={styles.devBadge}>
-          <Text style={styles.devBadgeText}>PREVIEW</Text>
-        </View>
-      </View>
-      <Svg width={width} height={height} style={{ opacity: 0.7 }}>
+      <Text style={styles.chartTitle}>Weekly Calories</Text>
+      <Svg width={width} height={height}>
         {data.map((value, index) => {
           const barHeight = (value / maxValue) * (height - 30);
           const x = 30 + index * barWidth + (barWidth - 20) / 2;
@@ -212,15 +149,6 @@ export default function MealTrackingScreen({ navigation }) {
   const [isLoading, setIsLoading] = useState(false);
   const [editingFood, setEditingFood] = useState(null);
   const [weeklyData] = useState([1850, 2100, 1950, 2200, 1800, 2000, dailyTotals.calories || 0]);
-  const [showDevNotice, setShowDevNotice] = useState(false);
-
-  // Show development notice on mount
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setShowDevNotice(true);
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, []);
 
   // Load saved data on component mount
   useEffect(() => {
@@ -271,33 +199,31 @@ export default function MealTrackingScreen({ navigation }) {
   };
 
   const fetchNutritionData = async (query) => {
-    // Show development alert instead of making real API call
-    Alert.alert(
-      'Development Mode',
-      'Nutrition API is currently disabled in development mode. Demo data will be used instead.',
-      [{ text: 'OK' }]
-    );
-    
     setIsLoading(true);
-    
-    // Simulate API call with demo data
-    setTimeout(() => {
-      const demoData = {
-        name: query.trim(),
-        calories: Math.floor(Math.random() * 300) + 50,
-        protein_g: Math.floor(Math.random() * 25) + 5,
-        carbohydrates_total_g: Math.floor(Math.random() * 40) + 10,
-        fat_total_g: Math.floor(Math.random() * 15) + 2,
-        fiber_g: Math.floor(Math.random() * 8) + 1,
-        sugar_g: Math.floor(Math.random() * 20) + 2,
-        sodium_mg: Math.floor(Math.random() * 500) + 50,
-      };
-      
+    try {
+      const response = await axios.get('https://api.calorieninjas.com/v1/nutrition', {
+        headers: {
+          'X-Api-Key': CALORIE_NINJAS_API_KEY
+        },
+        params: {
+          query: query.trim()
+        }
+      });
+
+      const nutritionData = response.data.items;
+      if (nutritionData.length === 0) {
+        Alert.alert('No Results', 'No nutrition data found. Try a different food name or be more specific (e.g., "1 large apple").');
+        return;
+      }
+
+      return nutritionData[0];
+    } catch (error) {
+      console.error('Error fetching nutrition data:', error.response?.data || error.message);
+      Alert.alert('Error', 'Failed to fetch nutrition data. Please check your internet connection and try again.');
+      return null;
+    } finally {
       setIsLoading(false);
-      return demoData;
-    }, 1500);
-    
-    return null;
+    }
   };
 
   const addFoodToMeal = async () => {
@@ -306,17 +232,19 @@ export default function MealTrackingScreen({ navigation }) {
       return;
     }
 
-    // Use demo data for development
+    const nutritionData = await fetchNutritionData(foodQuery);
+    if (!nutritionData) return;
+
     const foodItem = {
       id: Date.now().toString(),
-      name: foodQuery.trim() + ' (Demo)',
-      calories: Math.floor(Math.random() * 300) + 50,
-      protein_g: Math.round((Math.random() * 25 + 5) * 10) / 10,
-      carbohydrates_total_g: Math.round((Math.random() * 40 + 10) * 10) / 10,
-      fat_total_g: Math.round((Math.random() * 15 + 2) * 10) / 10,
-      fiber_g: Math.round((Math.random() * 8 + 1) * 10) / 10,
-      sugar_g: Math.round((Math.random() * 20 + 2) * 10) / 10,
-      sodium_mg: Math.floor(Math.random() * 500) + 50,
+      name: nutritionData.name,
+      calories: Math.round(nutritionData.calories || 0),
+      protein_g: Math.round((nutritionData.protein_g || 0) * 10) / 10,
+      carbohydrates_total_g: Math.round((nutritionData.carbohydrates_total_g || 0) * 10) / 10,
+      fat_total_g: Math.round((nutritionData.fat_total_g || 0) * 10) / 10,
+      fiber_g: Math.round((nutritionData.fiber_g || 0) * 10) / 10,
+      sugar_g: Math.round((nutritionData.sugar_g || 0) * 10) / 10,
+      sodium_mg: Math.round(nutritionData.sodium_mg || 0),
       timestamp: new Date().toISOString(),
     };
 
@@ -350,11 +278,40 @@ export default function MealTrackingScreen({ navigation }) {
   };
 
   const editFoodItem = (mealType, food) => {
-    Alert.alert(
-      'Development Mode',
-      'Edit functionality is currently disabled in development mode.',
-      [{ text: 'OK' }]
-    );
+    setEditingFood({ mealType, food });
+    setFoodQuery(food.name);
+    setSelectedMealType(mealType);
+    setModalVisible(true);
+  };
+
+  const updateFoodItem = async () => {
+    if (!editingFood) return;
+
+    const updatedNutritionData = await fetchNutritionData(foodQuery);
+    if (!updatedNutritionData) return;
+
+    const updatedFood = {
+      ...editingFood.food,
+      name: updatedNutritionData.name,
+      calories: Math.round(updatedNutritionData.calories || 0),
+      protein_g: Math.round((updatedNutritionData.protein_g || 0) * 10) / 10,
+      carbohydrates_total_g: Math.round((updatedNutritionData.carbohydrates_total_g || 0) * 10) / 10,
+      fat_total_g: Math.round((updatedNutritionData.fat_total_g || 0) * 10) / 10,
+      fiber_g: Math.round((updatedNutritionData.fiber_g || 0) * 10) / 10,
+      sugar_g: Math.round((updatedNutritionData.sugar_g || 0) * 10) / 10,
+      sodium_mg: Math.round(updatedNutritionData.sodium_mg || 0),
+    };
+
+    setMeals(prev => ({
+      ...prev,
+      [editingFood.mealType]: prev[editingFood.mealType].map(food =>
+        food.id === editingFood.food.id ? updatedFood : food
+      )
+    }));
+
+    setEditingFood(null);
+    setFoodQuery('');
+    setModalVisible(false);
   };
 
   const openAddFoodModal = (mealType) => {
@@ -403,15 +360,6 @@ export default function MealTrackingScreen({ navigation }) {
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Development Notice Modal */}
-      <DevelopmentNoticeModal 
-        visible={showDevNotice} 
-        onClose={() => setShowDevNotice(false)} 
-      />
-
-      {/* Under Development Banner */}
-      <UnderDevelopmentBanner />
-
       {/* Modern Header */}
       <View style={styles.header}>
         <TouchableOpacity 
@@ -422,7 +370,7 @@ export default function MealTrackingScreen({ navigation }) {
         </TouchableOpacity>
         <View style={styles.headerCenter}>
           <Text style={styles.title}>Nutrition Tracker</Text>
-          <Text style={styles.subtitle}>Today • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} • DEV</Text>
+          <Text style={styles.subtitle}>Today • {new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</Text>
         </View>
         <TouchableOpacity onPress={clearAllMeals} style={styles.clearButtonContainer}>
           <Text style={styles.clearButton}>Clear</Text>
@@ -506,12 +454,7 @@ export default function MealTrackingScreen({ navigation }) {
         {/* Macro Distribution */}
         {(dailyTotals.protein + dailyTotals.carbs + dailyTotals.fat) > 0 && (
           <View style={styles.macroDistributionCard}>
-            <View style={styles.cardTitleContainer}>
-              <Text style={styles.cardTitle}>Macro Distribution</Text>
-              <View style={styles.devBadge}>
-                <Text style={styles.devBadgeText}>BETA</Text>
-              </View>
-            </View>
+            <Text style={styles.cardTitle}>Macro Distribution</Text>
             <View style={styles.macroChartContainer}>
               <MacroChart
                 protein={dailyTotals.protein}
@@ -539,12 +482,7 @@ export default function MealTrackingScreen({ navigation }) {
 
         {/* Modern Meals Section */}
         <View style={styles.mealsSection}>
-          <View style={styles.sectionTitleContainer}>
-            <Text style={styles.sectionTitle}>Today's Meals</Text>
-            <View style={styles.devBadge}>
-              <Text style={styles.devBadgeText}>DEMO DATA</Text>
-            </View>
-          </View>
+          <Text style={styles.sectionTitle}>Today's Meals</Text>
           {Object.keys(meals).map((mealType) => (
             <View key={mealType} style={styles.modernMealCard}>
               <View style={styles.mealHeader}>
@@ -566,7 +504,7 @@ export default function MealTrackingScreen({ navigation }) {
               {meals[mealType].length === 0 ? (
                 <View style={styles.emptyMealContainer}>
                   <Text style={styles.emptyMealText}>No foods added yet</Text>
-                  <Text style={styles.emptyMealSubtext}>Tap + to add demo food</Text>
+                  <Text style={styles.emptyMealSubtext}>Tap + to add your first food</Text>
                 </View>
               ) : (
                 meals[mealType].map((food, index) => (
@@ -591,7 +529,7 @@ export default function MealTrackingScreen({ navigation }) {
                     <View style={styles.foodActions}>
                       <TouchableOpacity
                         onPress={() => editFoodItem(mealType, food)}
-                        style={[styles.editButton, styles.disabledButton]}
+                        style={styles.editButton}
                       >
                         <Text style={styles.actionIcon}>✏️</Text>
                       </TouchableOpacity>
@@ -627,7 +565,7 @@ export default function MealTrackingScreen({ navigation }) {
             
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>
-                Add Demo Food to {selectedMealType}
+                {editingFood ? 'Edit Food' : `Add to ${selectedMealType}`}
               </Text>
               <TouchableOpacity
                 onPress={() => {
@@ -639,13 +577,6 @@ export default function MealTrackingScreen({ navigation }) {
               >
                 <Text style={styles.closeIcon}>×</Text>
               </TouchableOpacity>
-            </View>
-
-            <View style={styles.devNoticeContainer}>
-              <Text style={styles.devNoticeIcon}>⚠️</Text>
-              <Text style={styles.devNoticeText}>
-                Development Mode: Random demo data will be generated
-              </Text>
             </View>
 
             <View style={styles.inputContainer}>
@@ -664,24 +595,24 @@ export default function MealTrackingScreen({ navigation }) {
               
               <TouchableOpacity
                 style={[styles.modernAddFoodButton, isLoading && styles.disabledButton]}
-                onPress={addFoodToMeal}
+                onPress={editingFood ? updateFoodItem : addFoodToMeal}
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#fff" />
                 ) : (
                   <Text style={styles.addFoodButtonText}>
-                    Add Demo Food
+                    {editingFood ? 'Update Food' : 'Add Food'}
                   </Text>
                 )}
               </TouchableOpacity>
             </View>
 
             <View style={styles.modernTipsContainer}>
-              <Text style={styles.tipsTitle}>🚧 Development Notes</Text>
-              <Text style={styles.tipsText}>• Real nutrition data is disabled</Text>
-              <Text style={styles.tipsText}>• Random demo values will be generated</Text>
-              <Text style={styles.tipsText}>• Edit functionality is temporarily disabled</Text>
+              <Text style={styles.tipsTitle}>💡 Pro Tips</Text>
+              <Text style={styles.tipsText}>• Include quantities (1 cup, 100g, 1 medium)</Text>
+              <Text style={styles.tipsText}>• Be specific (grilled vs fried chicken)</Text>
+              <Text style={styles.tipsText}>• Include cooking methods when relevant</Text>
             </View>
           </View>
         </View>
@@ -694,171 +625,14 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8fafc',
+    paddingTop: 50, // Added top padding to move content lower
   },
-  
-  // Development Banner Styles
-  devBanner: {
-    backgroundColor: '#FEF3C7',
-    borderBottomWidth: 1,
-    borderBottomColor: '#F59E0B',
-  },
-  devBannerContent: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-  },
-  devBannerIcon: {
-    fontSize: 18,
-    marginRight: 12,
-  },
-  devBannerTextContainer: {
-    flex: 1,
-  },
-  devBannerTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#92400E',
-  },
-  devBannerSubtitle: {
-    fontSize: 12,
-    color: '#A16207',
-    marginTop: 2,
-  },
-
-  // Development Notice Modal Styles
-  noticeModalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  noticeModalContent: {
-    backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    width: '90%',
-    maxWidth: 400,
-    alignItems: 'center',
-  },
-  noticeIcon: {
-    fontSize: 48,
-    marginBottom: 16,
-  },
-  noticeTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1e293b',
-    marginBottom: 12,
-    textAlign: 'center',
-  },
-  noticeText: {
-    fontSize: 14,
-    color: '#64748b',
-    textAlign: 'center',
-    lineHeight: 20,
-    marginBottom: 16,
-  },
-  noticeList: {
-    alignSelf: 'stretch',
-    marginBottom: 24,
-  },
-  noticeListItem: {
-    fontSize: 13,
-    color: '#64748b',
-    marginBottom: 6,
-    paddingLeft: 8,
-  },
-  noticeButton: {
-    backgroundColor: '#4CAF50',
-    paddingHorizontal: 32,
-    paddingVertical: 12,
-    borderRadius: 8,
-    minWidth: 120,
-  },
-  noticeButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
-  },
-
-  // Development Overlay Styles
-  progressContainer: {
-    position: 'relative',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  devOverlay: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -15 }, { translateY: -8 }],
-    backgroundColor: 'rgba(255, 193, 7, 0.9)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  devOverlayText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#000',
-  },
-  devPlaceholder: {
-    backgroundColor: '#f1f5f9',
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
-    borderStyle: 'dashed',
-    alignItems: 'center',
-    justifyContent: 'center',
-    minHeight: 100,
-  },
-  devPlaceholderText: {
-    fontSize: 10,
-    color: '#94a3b8',
-    textAlign: 'center',
-    fontWeight: '500',
-  },
-  chartWithOverlay: {
-    position: 'relative',
-  },
-  chartDevOverlay: {
-    position: 'absolute',
-    top: '50%',
-    left: '50%',
-    transform: [{ translateX: -15 }, { translateY: -8 }],
-    backgroundColor: 'rgba(156, 39, 176, 0.9)',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 4,
-  },
-  chartDevText: {
-    fontSize: 8,
-    fontWeight: 'bold',
-    color: '#fff',
-  },
-  devBadge: {
-    backgroundColor: '#FEF3C7',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    marginLeft: 8,
-  },
-  devBadgeText: {
-    fontSize: 10,
-    fontWeight: '600',
-    color: '#92400E',
-  },
-
-  // Header Styles - Made responsive
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    paddingTop: Platform.OS === 'ios' ? 44 : 12, // Account for status bar
+    paddingHorizontal: 20,
+    paddingVertical: 16,
     backgroundColor: '#fff',
     borderBottomWidth: 1,
     borderBottomColor: '#e2e8f0',
@@ -872,56 +646,46 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   backButtonText: {
-    fontSize: 18,
-    color: '#475569',
+    color: '#334155',
+    fontSize: 20,
     fontWeight: '600',
   },
   headerCenter: {
-    flex: 1,
     alignItems: 'center',
-    paddingHorizontal: 16,
   },
   title: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
   },
   subtitle: {
-    fontSize: 12,
+    fontSize: 14,
     color: '#64748b',
     marginTop: 2,
   },
   clearButtonContainer: {
     width: 40,
-    alignItems: 'flex-end',
+    alignItems: 'center',
   },
   clearButton: {
     color: '#ef4444',
     fontSize: 14,
     fontWeight: '600',
   },
-
-  // Main Scroll Container - Fixed for responsiveness
   scrollContainer: {
-    flex: 1,
+    padding: 20,
+    paddingBottom: 40,
   },
-  scrollContent: {
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 100, // Extra bottom padding for safe area
-  },
-
-  // Hero Card Styles - Made responsive
   heroCard: {
     backgroundColor: '#fff',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 10,
-    elevation: 3,
+    shadowOpacity: 0.1,
+    shadowRadius: 20,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 8,
   },
   progressSection: {
     alignItems: 'center',
@@ -930,8 +694,7 @@ const styles = StyleSheet.create({
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 24,
-    minHeight: 120,
+    marginBottom: 32,
   },
   progressTextContainer: {
     position: 'absolute',
@@ -939,30 +702,26 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   caloriesNumber: {
-    fontSize: 22,
+    fontSize: 24,
     fontWeight: 'bold',
     color: '#1e293b',
   },
   caloriesGoal: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#64748b',
   },
   caloriesLabel: {
-    fontSize: 11,
-    color: '#94a3b8',
+    fontSize: 12,
+    color: '#64748b',
     marginTop: 2,
   },
   macroCircles: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    flexWrap: 'wrap',
   },
   macroItem: {
     alignItems: 'center',
-    position: 'relative',
-    minWidth: 60,
-    marginBottom: 8,
   },
   macroTextContainer: {
     position: 'absolute',
@@ -971,82 +730,66 @@ const styles = StyleSheet.create({
     top: 12,
   },
   macroNumber: {
-    fontSize: 11,
+    fontSize: 14,
     fontWeight: 'bold',
     color: '#1e293b',
   },
   macroUnit: {
-    fontSize: 8,
+    fontSize: 10,
     color: '#64748b',
   },
   macroLabel: {
-    fontSize: 10,
+    fontSize: 12,
     color: '#64748b',
-    marginTop: 6,
+    marginTop: 8,
     fontWeight: '500',
   },
-
-  // Weekly Chart Styles - Made responsive
   weeklyCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    padding: 20,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
   },
   chartContainer: {
     alignItems: 'center',
-    width: '100%',
-  },
-  chartTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
   },
   chartTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1e293b',
+    marginBottom: 16,
+    textAlign: 'center',
   },
-
-  // Macro Distribution Card - Made responsive
   macroDistributionCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
+    padding: 20,
+    marginBottom: 20,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
-  },
-  cardTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    },
   cardTitle: {
     fontSize: 16,
     fontWeight: '600',
     color: '#1e293b',
+    marginBottom: 16,
   },
   macroChartContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    flexWrap: 'wrap',
   },
   macroLegend: {
     flex: 1,
-    marginLeft: 16,
-    minWidth: 120,
+    marginLeft: 20,
   },
   legendItem: {
     flexDirection: 'row',
@@ -1062,59 +805,52 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 12,
     color: '#64748b',
-    flex: 1,
+    fontWeight: '500',
   },
-
-  // Meals Section Styles - Made responsive
   mealsSection: {
-    marginBottom: 20,
-  },
-  sectionTitleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
+    marginTop: 8,
   },
   sectionTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
+    marginBottom: 16,
+    marginLeft: 4,
   },
   modernMealCard: {
     backgroundColor: '#fff',
     borderRadius: 16,
-    padding: 16,
-    marginBottom: 12,
+    marginBottom: 16,
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.05,
-    shadowRadius: 5,
-    elevation: 2,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 2 },
+    elevation: 3,
+    overflow: 'hidden',
   },
   mealHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 12,
+    alignItems: 'center',
+    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
   },
   mealTitleContainer: {
     flexDirection: 'row',
     alignItems: 'center',
-    flex: 1,
   },
   mealIcon: {
-    fontSize: 22,
+    fontSize: 24,
     marginRight: 12,
   },
-  mealInfo: {
-    flex: 1,
-  },
   mealType: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '600',
     color: '#1e293b',
   },
   mealCalories: {
-    fontSize: 13,
+    fontSize: 14,
     color: '#64748b',
     marginTop: 2,
   },
@@ -1126,35 +862,36 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#4CAF50',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
   },
   addIcon: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
   },
   emptyMealContainer: {
+    padding: 32,
     alignItems: 'center',
-    paddingVertical: 16,
   },
   emptyMealText: {
-    fontSize: 14,
-    color: '#94a3b8',
+    fontSize: 16,
+    color: '#64748b',
     fontWeight: '500',
   },
   emptyMealSubtext: {
-    fontSize: 12,
-    color: '#cbd5e1',
+    fontSize: 14,
+    color: '#94a3b8',
     marginTop: 4,
   },
   foodItem: {
     flexDirection: 'row',
-    alignItems: 'flex-start',
     justifyContent: 'space-between',
-    paddingVertical: 12,
+    alignItems: 'flex-start',
+    padding: 16,
+    paddingHorizontal: 20,
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
   },
@@ -1166,26 +903,28 @@ const styles = StyleSheet.create({
     marginRight: 12,
   },
   foodName: {
-    fontSize: 15,
-    fontWeight: '500',
+    fontSize: 16,
+    fontWeight: '600',
     color: '#1e293b',
-    marginBottom: 6,
+    marginBottom: 8,
+    lineHeight: 20,
   },
   foodNutritionRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    gap: 6,
   },
   nutritionBadge: {
     backgroundColor: '#f1f5f9',
-    paddingHorizontal: 6,
-    paddingVertical: 3,
-    borderRadius: 10,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
     marginRight: 4,
-    marginBottom: 3,
+    marginBottom: 4,
   },
   nutritionBadgeText: {
-    fontSize: 10,
-    fontWeight: '500',
+    fontSize: 11,
+    fontWeight: '600',
     color: '#475569',
   },
   foodActions: {
@@ -1193,30 +932,25 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   editButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#f1f5f9',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 6,
-  },
-  disabledButton: {
-    opacity: 0.5,
+    marginRight: 8,
   },
   deleteButton: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: '#fef2f2',
     alignItems: 'center',
     justifyContent: 'center',
   },
   actionIcon: {
-    fontSize: 12,
+    fontSize: 14,
   },
-
-  // Modal Styles - Made responsive
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
@@ -1226,31 +960,29 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    paddingTop: 12,
-    paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 40,
-    maxHeight: '85%',
-    minHeight: 300,
+    paddingHorizontal: 24,
+    maxHeight: '80%',
   },
   modalHandle: {
     width: 40,
     height: 4,
-    backgroundColor: '#d1d5db',
+    backgroundColor: '#e2e8f0',
     borderRadius: 2,
     alignSelf: 'center',
     marginBottom: 20,
   },
   modalHeader: {
     flexDirection: 'row',
-    alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: 20,
+    alignItems: 'center',
+    marginBottom: 24,
   },
   modalTitle: {
     fontSize: 20,
     fontWeight: 'bold',
     color: '#1e293b',
-    flex: 1,
   },
   modernCloseButton: {
     width: 32,
@@ -1261,29 +993,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   closeIcon: {
-    fontSize: 18,
+    fontSize: 20,
     color: '#64748b',
     fontWeight: 'bold',
   },
-  devNoticeContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FEF3C7',
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 20,
-  },
-  devNoticeIcon: {
-    fontSize: 16,
-    marginRight: 8,
-  },
-  devNoticeText: {
-    fontSize: 13,
-    color: '#92400E',
-    flex: 1,
-  },
   inputContainer: {
-    marginBottom: 20,
+    marginBottom: 24,
   },
   inputLabel: {
     fontSize: 16,
@@ -1292,16 +1007,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   modernFoodInput: {
-    borderWidth: 2,
-    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
     borderRadius: 12,
     padding: 16,
     fontSize: 16,
     color: '#1e293b',
-    backgroundColor: '#fff',
-    minHeight: 60,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 20,
+    minHeight: 80,
     textAlignVertical: 'top',
-    marginBottom: 16,
   },
   modernAddFoodButton: {
     backgroundColor: '#4CAF50',
@@ -1309,10 +1024,15 @@ const styles = StyleSheet.create({
     padding: 16,
     alignItems: 'center',
     shadowColor: '#4CAF50',
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.2,
-    shadowRadius: 4,
-    elevation: 3,
+    elevation: 4,
+  },
+  disabledButton: {
+    backgroundColor: '#94a3b8',
+    shadowOpacity: 0,
+    elevation: 0,
   },
   addFoodButtonText: {
     color: '#fff',
@@ -1323,7 +1043,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     borderRadius: 12,
     padding: 16,
-    marginTop: 8,
+    borderLeftWidth: 4,
+    borderLeftColor: '#4CAF50',
   },
   tipsTitle: {
     fontSize: 14,
@@ -1335,6 +1056,6 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#64748b',
     marginBottom: 4,
-    paddingLeft: 8,
+    lineHeight: 18,
   },
 });

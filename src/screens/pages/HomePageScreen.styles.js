@@ -1,102 +1,147 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions, Platform } from 'react-native';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
+
+// More nuanced screen size detection
+const isSmallScreen = screenHeight < 700;
+const isVerySmallScreen = screenHeight < 650;
+const isTablet = screenWidth > 768;
+
+// Responsive padding and spacing functions
+const getResponsivePadding = (base) => {
+  if (isVerySmallScreen) return base * 0.7;
+  if (isSmallScreen) return base * 0.85;
+  if (isTablet) return base * 1.2;
+  return base;
+};
+
+const getResponsiveFontSize = (base) => {
+  if (isVerySmallScreen) return base * 0.85;
+  if (isSmallScreen) return base * 0.9;
+  if (isTablet) return base * 1.1;
+  return base;
+};
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f8f9fa',
+    paddingTop: Platform.OS === 'ios' ? (isSmallScreen ? 44 : 50) : 20,
   },
   scrollContent: {
     flexGrow: 1,
-    padding: 20,
+    padding: getResponsivePadding(20),
+    paddingTop: getResponsivePadding(10),
+    paddingBottom: getResponsivePadding(40), // Extra space for safe scrolling
   },
   header: {
-    marginBottom: 30,
+    marginBottom: getResponsivePadding(25),
     alignItems: 'center',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: getResponsiveFontSize(28),
     fontWeight: 'bold',
     color: '#2c3e50',
     textAlign: 'center',
     marginBottom: 8,
+    paddingHorizontal: 15,
+    lineHeight: getResponsiveFontSize(32),
   },
   headerSubtitle: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16),
     color: '#7f8c8d',
     textAlign: 'center',
+    paddingHorizontal: 15,
+    lineHeight: getResponsiveFontSize(20),
   },
 
-  // Progress Section Styles
+  // Progress Section Styles - Improved responsiveness
   progressSection: {
-    marginBottom: 25,
+    marginBottom: getResponsivePadding(20),
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: getResponsiveFontSize(18),
     fontWeight: 'bold',
     color: '#2c3e50',
-    marginBottom: 15,
+    marginBottom: getResponsivePadding(12),
   },
   statsContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
-    marginBottom: 20,
+    marginBottom: getResponsivePadding(15),
+    paddingHorizontal: 5,
+    // Use flexible gap that adapts to screen width
+    gap: Math.max(6, (screenWidth - 60) * 0.02),
   },
   statCard: {
     flex: 1,
     backgroundColor: 'white',
-    padding: 15,
+    padding: getResponsivePadding(12),
     borderRadius: 12,
     alignItems: 'center',
+    justifyContent: 'center',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
-    minHeight: 70,
+    // Ensure minimum and maximum sizes
+    minHeight: isVerySmallScreen ? 55 : isSmallScreen ? 65 : 75,
+    maxWidth: (screenWidth - 80) / 4, // Better calculation for card width
+    minWidth: 70, // Prevent cards from being too narrow
   },
   statNumber: {
-    fontSize: 20,
+    fontSize: getResponsiveFontSize(18),
     fontWeight: 'bold',
     color: '#007AFF',
     marginBottom: 2,
+    textAlign: 'center',
+    numberOfLines: 1,
+    adjustsFontSizeToFit: true,
   },
   statLabel: {
-    fontSize: 12,
+    fontSize: getResponsiveFontSize(11),
     color: '#6c757d',
     textAlign: 'center',
+    lineHeight: getResponsiveFontSize(13),
+    numberOfLines: 2,
   },
 
-  // Weekly Tracker Styles
+  // Weekly Tracker Styles - Better layout
   weeklyTrackerContainer: {
     backgroundColor: 'white',
-    padding: 15,
+    padding: getResponsivePadding(15),
     borderRadius: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 3,
+    marginHorizontal: 2, // Prevent shadow clipping
   },
   weeklyTrackerTitle: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16),
     fontWeight: '600',
     color: '#2c3e50',
-    marginBottom: 12,
+    marginBottom: getResponsivePadding(10),
     textAlign: 'center',
   },
   weeklyRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',
     alignItems: 'center',
+    paddingHorizontal: 8,
+    minHeight: 50, // Ensure consistent height
   },
   dayContainer: {
     alignItems: 'center',
+    flex: 1,
+    minWidth: 35, // Prevent squishing
   },
   dayButton: {
-    width: 35,
-    height: 35,
-    borderRadius: 17.5,
+    width: Math.min(35, (screenWidth - 100) / 7), // Dynamic but capped size
+    height: Math.min(35, (screenWidth - 100) / 7),
+    borderRadius: Math.min(17.5, (screenWidth - 100) / 14),
     backgroundColor: '#e9ecef',
     alignItems: 'center',
     justifyContent: 'center',
@@ -110,44 +155,51 @@ const styles = StyleSheet.create({
   dayText: {
     color: '#6c757d',
     fontWeight: '600',
-    fontSize: 12,
+    fontSize: getResponsiveFontSize(11),
   },
   dayTextActive: {
     color: '#fff',
   },
 
-  // Main Button Styles
+  // Main Button Styles - Better responsive scaling
   mainButton: {
     backgroundColor: '#007AFF',
-    paddingVertical: 20,
+    paddingVertical: getResponsivePadding(18),
     paddingHorizontal: 25,
     borderRadius: 15,
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: getResponsivePadding(18),
+    marginHorizontal: 5, // Prevent shadow clipping
     shadowColor: '#007AFF',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 5,
+    minHeight: 60, // Ensure touchable area
   },
   mainButtonText: {
     color: 'white',
-    fontSize: 18,
+    fontSize: getResponsiveFontSize(17),
     fontWeight: 'bold',
     marginBottom: 5,
+    textAlign: 'center',
+    lineHeight: getResponsiveFontSize(20),
   },
   mainButtonSubtext: {
     color: 'white',
-    fontSize: 14,
+    fontSize: getResponsiveFontSize(13),
     opacity: 0.9,
+    textAlign: 'center',
+    lineHeight: getResponsiveFontSize(16),
   },
 
-  // Preview Container Styles
+  // Preview Container Styles - Improved spacing
   previewContainer: {
     backgroundColor: 'white',
-    padding: 15,
+    padding: getResponsivePadding(15),
     borderRadius: 12,
-    marginBottom: 20,
+    marginBottom: getResponsivePadding(15),
+    marginHorizontal: 2,
     borderLeftWidth: 4,
     borderLeftColor: '#007AFF',
     shadowColor: '#000',
@@ -157,18 +209,20 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   previewTitle: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(15),
     fontWeight: 'bold',
     color: '#2c3e50',
     marginBottom: 8,
+    lineHeight: getResponsiveFontSize(18),
   },
   previewText: {
-    fontSize: 14,
+    fontSize: getResponsiveFontSize(13),
     color: '#6c757d',
     marginBottom: 4,
+    lineHeight: getResponsiveFontSize(17),
   },
 
-  // History Section Styles
+  // History Section Styles - Better layout
   historySection: {
     marginTop: 10,
   },
@@ -176,24 +230,27 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 15,
+    marginBottom: getResponsivePadding(12),
+    flexWrap: 'wrap', // Allow wrapping on very small screens
   },
   clearButton: {
     backgroundColor: '#dc3545',
     paddingHorizontal: 12,
-    paddingVertical: 6,
+    paddingVertical: 8,
     borderRadius: 6,
+    minHeight: 36, // Ensure touchable area
   },
   clearButtonText: {
     color: 'white',
-    fontSize: 12,
+    fontSize: getResponsiveFontSize(12),
     fontWeight: '600',
   },
   historyItem: {
     backgroundColor: 'white',
-    padding: 15,
+    padding: getResponsivePadding(15),
     borderRadius: 12,
-    marginBottom: 12,
+    marginBottom: getResponsivePadding(10),
+    marginHorizontal: 2,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
@@ -203,63 +260,75 @@ const styles = StyleSheet.create({
   historyHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 10,
+    alignItems: 'flex-start', // Better alignment for wrapped text
+    marginBottom: getResponsivePadding(8),
   },
   historyGoal: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(15),
     fontWeight: 'bold',
     color: '#2c3e50',
+    flex: 1,
+    marginRight: 10,
+    lineHeight: getResponsiveFontSize(18),
   },
   historyDate: {
-    fontSize: 12,
+    fontSize: getResponsiveFontSize(11),
     color: '#6c757d',
+    flexShrink: 0, // Prevent date from shrinking
   },
   historyDetails: {
-    marginBottom: 10,
+    marginBottom: getResponsivePadding(8),
   },
   historyDetailRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 4,
+    alignItems: 'flex-start',
   },
   historyLabel: {
-    fontSize: 14,
+    fontSize: getResponsiveFontSize(13),
     color: '#6c757d',
+    flex: 1,
   },
   historyValue: {
-    fontSize: 14,
+    fontSize: getResponsiveFontSize(13),
     fontWeight: '600',
     color: '#2c3e50',
+    textAlign: 'right',
+    flex: 1,
   },
   historyBodyParts: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 6,
+    marginTop: 5,
   },
   historyBodyPartChip: {
     backgroundColor: '#e9ecef',
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    paddingVertical: 4,
     borderRadius: 12,
+    marginBottom: 4, // Space for wrapped items
   },
   historyBodyPartText: {
-    fontSize: 12,
+    fontSize: getResponsiveFontSize(11),
     color: '#495057',
   },
   moreHistoryText: {
     textAlign: 'center',
-    fontSize: 12,
+    fontSize: getResponsiveFontSize(12),
     color: '#6c757d',
     fontStyle: 'italic',
-    marginTop: 10,
+    marginTop: 15,
+    marginBottom: 10,
   },
 
-  // Motivation Card Styles
+  // Motivation Card Styles - Better responsive design
   motivationCard: {
     backgroundColor: '#f8f9fa',
-    padding: 20,
-    marginVertical: 15,
+    padding: getResponsivePadding(18),
+    marginVertical: getResponsivePadding(15),
+    marginHorizontal: 2,
     borderRadius: 12,
     alignItems: 'center',
     borderWidth: 1,
@@ -270,51 +339,61 @@ const styles = StyleSheet.create({
     elevation: 2,
   },
   motivationText: {
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(15),
     fontStyle: 'italic',
     color: '#495057',
     textAlign: 'center',
-    lineHeight: 22,
+    lineHeight: getResponsiveFontSize(22),
   },
 
-  // Modal Styles
+  // Modal Styles - Improved responsiveness
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0, 0, 0, 0.4)',
     justifyContent: 'center',
-    padding: 20,
+    padding: getResponsivePadding(20),
   },
   modalContent: {
     backgroundColor: 'white',
     borderRadius: 16,
-    padding: 20,
-    maxHeight: '80%',
+    padding: getResponsivePadding(20),
+    maxHeight: isVerySmallScreen ? '90%' : isSmallScreen ? '85%' : '80%',
+    // Ensure modal doesn't get too wide on tablets
+    maxWidth: isTablet ? 500 : '100%',
+    alignSelf: 'center',
+    width: '100%',
   },
   modalTitle: {
-    fontSize: 22,
+    fontSize: getResponsiveFontSize(22),
     fontWeight: 'bold',
     color: '#2c3e50',
     marginBottom: 15,
     textAlign: 'center',
+    lineHeight: getResponsiveFontSize(26),
   },
   sectionSubtitle: {
-    fontSize: 13,
+    fontSize: getResponsiveFontSize(13),
     color: '#7f8c8d',
     marginBottom: 10,
+    lineHeight: getResponsiveFontSize(16),
   },
   optionsContainer: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 10,
+    gap: getResponsivePadding(8),
     marginBottom: 10,
+    justifyContent: 'flex-start',
   },
   optionButton: {
     borderWidth: 1,
     borderColor: '#ccc',
     borderRadius: 8,
-    paddingVertical: 8,
-    paddingHorizontal: 15,
-    margin: 5,
+    paddingVertical: getResponsivePadding(8),
+    paddingHorizontal: getResponsivePadding(12),
+    margin: 2,
+    minWidth: isVerySmallScreen ? 65 : 75,
+    minHeight: 36, // Ensure touchable area
+    justifyContent: 'center',
   },
   selectedOption: {
     backgroundColor: '#007AFF',
@@ -322,46 +401,57 @@ const styles = StyleSheet.create({
   },
   optionText: {
     color: '#2c3e50',
+    fontSize: getResponsiveFontSize(13),
+    textAlign: 'center',
+    lineHeight: getResponsiveFontSize(16),
   },
   selectedOptionText: {
     color: 'white',
   },
   modalButtonsContainer: {
-    flexDirection: 'row',
+    flexDirection: isVerySmallScreen ? 'column' : 'row',
     justifyContent: 'space-between',
     marginTop: 15,
+    gap: 10,
   },
   resetButton: {
-    padding: 12,
+    padding: getResponsivePadding(12),
     backgroundColor: '#6c757d',
     borderRadius: 8,
-    flex: 1,
-    marginRight: 10,
+    flex: isVerySmallScreen ? 0 : 1,
+    minHeight: 44, // Better touch target
   },
   resetButtonText: {
     textAlign: 'center',
     color: 'white',
     fontWeight: '600',
+    fontSize: getResponsiveFontSize(15),
+    lineHeight: getResponsiveFontSize(18),
   },
   startButton: {
-    padding: 12,
+    padding: getResponsivePadding(12),
     backgroundColor: '#007AFF',
     borderRadius: 8,
-    flex: 1,
+    flex: isVerySmallScreen ? 0 : 1,
+    minHeight: 44, // Better touch target
   },
   startButtonText: {
     textAlign: 'center',
     color: 'white',
     fontWeight: '600',
+    fontSize: getResponsiveFontSize(15),
+    lineHeight: getResponsiveFontSize(18),
   },
   cancelButton: {
     marginTop: 15,
     alignSelf: 'center',
     padding: 10,
+    minHeight: 44, // Better touch target
   },
   cancelButtonText: {
     color: '#007AFF',
-    fontSize: 16,
+    fontSize: getResponsiveFontSize(16),
+    lineHeight: getResponsiveFontSize(19),
   },
 });
 

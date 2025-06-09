@@ -11,6 +11,7 @@ import {
 import { useNavigation, useFocusEffect, useRoute } from '@react-navigation/native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import styles from './HomePageScreen.styles';
+import { Dimensions, Platform } from 'react-native';
 
 const HomePageScreen = () => {
   const navigation = useNavigation();
@@ -326,24 +327,24 @@ const HomePageScreen = () => {
           <Text style={styles.sectionTitle}>📊 Your Progress</Text>
           
           {/* Weekly Stats */}
-          <View style={styles.statsContainer}>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{weeklyStats.thisWeek}</Text>
-              <Text style={styles.statLabel}>This Week</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{weeklyStats.totalWorkouts}</Text>
-              <Text style={styles.statLabel}>Total Workouts</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{formatTime(weeklyStats.totalTime)}</Text>
-              <Text style={styles.statLabel}>Total Time</Text>
-            </View>
-            <View style={styles.statCard}>
-              <Text style={styles.statNumber}>{weeklyStats.avgCompletion}%</Text>
-              <Text style={styles.statLabel}>Avg Completion</Text>
-            </View>
-          </View>
+<View style={styles.statsContainer}>
+  <View style={styles.statCard}>
+    <Text style={styles.statNumber}>{weeklyStats.thisWeek}</Text>
+    <Text style={styles.statLabel}>This Week</Text>
+  </View>
+  <View style={styles.statCard}>
+    <Text style={styles.statNumber}>{weeklyStats.totalWorkouts}</Text>
+    <Text style={styles.statLabel}>Total Workouts</Text>
+  </View>
+  <View style={styles.statCard}>
+    <Text style={styles.statNumber}>{formatTime(weeklyStats.totalTime)}</Text>
+    <Text style={styles.statLabel}>Total Time</Text>
+  </View>
+  <View style={styles.statCard}>
+    <Text style={styles.statNumber}>{weeklyStats.avgCompletion}%</Text>
+    <Text style={styles.statLabel}>Avg Completion</Text>
+  </View>
+</View>
 
           {/* Weekly Progress Grid */}
           <View style={styles.weeklyTrackerContainer}>

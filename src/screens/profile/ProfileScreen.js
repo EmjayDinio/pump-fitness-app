@@ -131,11 +131,13 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f5f5f5',
+    paddingTop: 50, // Added top padding to move content lower
   },
   loadingContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+    paddingTop: 50, // Added top padding to move content lower
   },
   header: {
     backgroundColor: 'white',

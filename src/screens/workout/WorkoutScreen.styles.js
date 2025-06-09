@@ -1,4 +1,6 @@
-import { StyleSheet } from 'react-native';
+import { StyleSheet, Dimensions } from 'react-native';
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 const styles = StyleSheet.create({
   container: {
@@ -10,6 +12,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#f8f9fa',
+    paddingHorizontal: 20,
   },
   loadingText: {
     marginTop: 16,
@@ -18,16 +21,19 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   scrollContent: {
-    paddingBottom: 20,
+    flexGrow: 1,
+    paddingBottom: 30, // Increased bottom padding for better scrolling
   },
   header: {
     backgroundColor: '#fff',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    paddingTop: Math.max(20, screenHeight * 0.06), // Dynamic top padding based on screen height
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
   },
   headerTitle: {
-    fontSize: 28,
+    fontSize: Math.min(28, screenWidth * 0.07), // Responsive font size
     fontWeight: 'bold',
     color: '#212529',
     marginBottom: 16,
@@ -39,30 +45,33 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     borderLeftWidth: 4,
     borderLeftColor: '#ffc107',
+    marginHorizontal: 4, // Prevent edge clipping
   },
   statusText: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
     color: '#856404',
     marginBottom: 4,
   },
   progressText: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: '#856404',
   },
   goalContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     marginBottom: 12,
+    flexWrap: 'wrap', // Allow wrapping on smaller screens
   },
   goalLabel: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
     color: '#495057',
     marginRight: 8,
+    marginBottom: 4, // Add margin for wrapped content
   },
   goalValue: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#007AFF',
     fontWeight: '500',
   },
@@ -70,7 +79,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   bodyPartsLabel: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
     color: '#495057',
     marginBottom: 8,
@@ -78,19 +87,22 @@ const styles = StyleSheet.create({
   bodyPartsList: {
     flexDirection: 'row',
     flexWrap: 'wrap',
+    marginHorizontal: -4, // Compensate for chip margins
   },
   bodyPartChip: {
     backgroundColor: '#e7f3ff',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    marginRight: 8,
+    marginHorizontal: 4, // Horizontal margin instead of right-only
     marginBottom: 8,
+    minWidth: 60, // Minimum width for consistency
   },
   bodyPartText: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: '#007AFF',
     fontWeight: '500',
+    textAlign: 'center',
   },
   mainStartButton: {
     backgroundColor: '#28a745',
@@ -98,6 +110,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
     borderRadius: 12,
     alignItems: 'center',
+    marginHorizontal: 4, // Prevent edge clipping
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -106,7 +119,7 @@ const styles = StyleSheet.create({
   },
   mainStartButtonText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     fontWeight: 'bold',
   },
   pauseButton: {
@@ -116,10 +129,11 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
     marginTop: 12,
+    marginHorizontal: 4,
   },
   pauseButtonText: {
     color: '#212529',
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
   },
   noSelectionContainer: {
@@ -127,9 +141,10 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 8,
     alignItems: 'center',
+    marginHorizontal: 4,
   },
   noSelectionText: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#6c757d',
     textAlign: 'center',
     marginBottom: 12,
@@ -142,7 +157,7 @@ const styles = StyleSheet.create({
   },
   selectGoalButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '500',
   },
   errorContainer: {
@@ -154,7 +169,7 @@ const styles = StyleSheet.create({
     borderColor: '#f5c6cb',
   },
   errorText: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#721c24',
     textAlign: 'center',
     marginBottom: 12,
@@ -168,20 +183,20 @@ const styles = StyleSheet.create({
   },
   retryButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '500',
   },
   exercisesContainer: {
     padding: 20,
   },
   exercisesTitle: {
-    fontSize: 22,
+    fontSize: Math.min(22, screenWidth * 0.055),
     fontWeight: 'bold',
     color: '#212529',
     marginBottom: 8,
   },
   exercisesSubtitle: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#6c757d',
     marginBottom: 20,
   },
@@ -190,6 +205,7 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     marginBottom: 16,
+    marginHorizontal: 4, // Prevent edge clipping
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
@@ -197,26 +213,28 @@ const styles = StyleSheet.create({
     elevation: 3,
   },
   exerciseHeader: {
-    flexDirection: 'row',
+    flexDirection: screenWidth < 350 ? 'column' : 'row', // Stack on very small screens
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: screenWidth < 350 ? 'flex-start' : 'center',
     marginBottom: 12,
   },
   exerciseName: {
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     fontWeight: 'bold',
     color: '#212529',
-    flex: 1,
-    marginRight: 12,
+    flex: screenWidth < 350 ? undefined : 1,
+    marginRight: screenWidth < 350 ? 0 : 12,
+    marginBottom: screenWidth < 350 ? 8 : 0,
   },
   difficultyBadge: {
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
+    alignSelf: screenWidth < 350 ? 'flex-start' : 'center',
   },
   difficultyText: {
     color: '#fff',
-    fontSize: 12,
+    fontSize: Math.min(12, screenWidth * 0.03),
     fontWeight: 'bold',
     textTransform: 'capitalize',
   },
@@ -224,26 +242,27 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   detailRow: {
-    flexDirection: 'row',
+    flexDirection: screenWidth < 300 ? 'column' : 'row', // Stack on very small screens
     marginBottom: 8,
   },
   detailLabel: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     fontWeight: '600',
     color: '#495057',
-    width: 100,
+    width: screenWidth < 300 ? undefined : 100,
+    marginBottom: screenWidth < 300 ? 2 : 0,
   },
   detailValue: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: '#212529',
-    flex: 1,
+    flex: screenWidth < 300 ? undefined : 1,
     textTransform: 'capitalize',
   },
   instructionsContainer: {
     marginTop: 8,
   },
   instructionsText: {
-    fontSize: 14,
+    fontSize: Math.min(14, screenWidth * 0.035),
     color: '#6c757d',
     lineHeight: 20,
     marginTop: 4,
@@ -257,23 +276,24 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
   },
   noExercisesContainer: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 40,
-    marginTop: 50,
+    paddingHorizontal: 40,
+    paddingVertical: 40,
+    marginTop: 20, // Reduced from 50
   },
   noExercisesText: {
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     color: '#6c757d',
     textAlign: 'center',
     marginBottom: 20,
   },
-  // Modal Styles
+  // Modal Styles - Enhanced for responsiveness
   modalContainer: {
     flex: 1,
     backgroundColor: '#fff',
@@ -282,7 +302,9 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
+    paddingTop: Math.max(15, screenHeight * 0.06), // Dynamic top padding
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
     backgroundColor: '#f8f9fa',
@@ -292,11 +314,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
+    minWidth: 80, // Ensure consistent width
   },
   timerText: {
     color: '#fff',
-    fontSize: 18,
+    fontSize: Math.min(18, screenWidth * 0.045),
     fontWeight: 'bold',
+    textAlign: 'center',
   },
   closeButton: {
     width: 36,
@@ -313,7 +337,8 @@ const styles = StyleSheet.create({
   },
   modalContent: {
     flex: 1,
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 15,
   },
   exerciseCounter: {
     backgroundColor: '#e7f3ff',
@@ -323,16 +348,17 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   counterText: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#007AFF',
     fontWeight: '600',
   },
   modalExerciseName: {
-    fontSize: 28,
+    fontSize: Math.min(28, screenWidth * 0.07),
     fontWeight: 'bold',
     color: '#212529',
     textAlign: 'center',
     marginBottom: 24,
+    paddingHorizontal: 10, // Prevent text cutoff
   },
   modalExerciseInfo: {
     backgroundColor: '#f8f9fa',
@@ -341,20 +367,21 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   infoItem: {
-    flexDirection: 'row',
+    flexDirection: screenWidth < 300 ? 'column' : 'row',
     justifyContent: 'space-between',
-    alignItems: 'center',
+    alignItems: screenWidth < 300 ? 'flex-start' : 'center',
     paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: '#e9ecef',
   },
   infoLabel: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
     color: '#495057',
+    marginBottom: screenWidth < 300 ? 4 : 0,
   },
   infoValue: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#212529',
     textTransform: 'capitalize',
   },
@@ -362,13 +389,13 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   instructionsTitle: {
-    fontSize: 20,
+    fontSize: Math.min(20, screenWidth * 0.05),
     fontWeight: 'bold',
     color: '#212529',
     marginBottom: 12,
   },
   modalInstructions: {
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     color: '#495057',
     lineHeight: 24,
     backgroundColor: '#f8f9fa',
@@ -376,21 +403,22 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   workoutControls: {
-    flexDirection: 'row',
+    flexDirection: screenWidth < 350 ? 'column' : 'row',
     justifyContent: 'space-between',
     marginBottom: 16,
+    gap: screenWidth < 350 ? 12 : 0,
   },
   skipButton: {
     backgroundColor: '#6c757d',
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 8,
-    flex: 0.3,
+    flex: screenWidth < 350 ? undefined : 0.3,
     alignItems: 'center',
   },
   skipButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
   },
   completeButton: {
@@ -398,12 +426,12 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 20,
     borderRadius: 8,
-    flex: 0.65,
+    flex: screenWidth < 350 ? undefined : 0.65,
     alignItems: 'center',
   },
   completeButtonText: {
     color: '#fff',
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
     textAlign: 'center',
   },
@@ -419,7 +447,7 @@ const styles = StyleSheet.create({
   },
   finishWorkoutButtonText: {
     color: '#212529',
-    fontSize: 16,
+    fontSize: Math.min(16, screenWidth * 0.04),
     fontWeight: '600',
   },
 });
